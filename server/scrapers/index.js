@@ -3,6 +3,7 @@ const cron = require('node-cron');
 const scrapers = [
   require('./news'),
   require('./sportRss'),
+  require('./bbcLive'),
   require('./weather'),
   require('./tv'),
   require('./football'),

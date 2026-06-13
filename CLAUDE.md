@@ -50,6 +50,7 @@ server/
     weather.js          Open-Meteo - every 30 min
     tv.js               TVmaze - every 2 hours
     football.js         football-data.org - every 15 min (PL/ELC/WC standings, top scorers)
+    bbcLive.js          BBC Sport HTML scrape (WC/PL/Championship) - every 5 min
     lottery.js          national-lottery.co.uk scrape - every hour (currently failing)
   stubs/              minimal skeleton fallbacks ONLY - no fabricated match data
 scripts/generate-icons.js  pure-JS PNG encoder (no native deps) for PWA icons
@@ -166,6 +167,14 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-06-14: BBC Sport HTML scraper added (`server/scrapers/bbcLive.js`).
+  Pulls live match data from BBC scores-fixtures pages for World Cup,
+  Premier League, Championship by extracting `window.__INITIAL_DATA__`
+  (double-encoded JSON). Returns home/away/score/status/kickoff/stage/venue
+  plus a `bbcUrl` pointing at the BBC live match page. Refresh every 5
+  minutes. World Cup pages 306/307 and PL page 303 now prefer BBC live
+  data over football-data.org and attach BBC live-text URLs to every
+  match row - tap a match to open BBC's live reporting in a new tab.
 - 2026-06-14: Authenticity pass v2. Stripped all fabricated match data from
   stubs (worldcup, football, business, sport, entertainment, travel, lottery
   now all empty skeletons). Added BBC Sport RSS scraper (`sportRss.js`) for

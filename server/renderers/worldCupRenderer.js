@@ -33,6 +33,44 @@ function wcHeadlines() {
   return [];
 }
 
+function wcLiveBuckets() {
+  const bbc = data.bbcLive();
+  if (!bbc || !bbc.worldCup) return null;
+  return bbc.worldCup;
+}
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function isToday(e) { return (e.kickoffISO || '').slice(0, 10) === todayIso(); }
+function isYesterday(e) {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() - 1);
+  return (e.kickoffISO || '').slice(0, 10) === d.toISOString().slice(0, 10);
+}
+
+// Render one live/upcoming/finished event as two rows: scoreline + venue/group.
+function writeMatchPair(g, row, e) {
+  const home = String(e.home || '').slice(0, 11).padEnd(11, ' ');
+  const away = String(e.away || '').slice(0, 11).padEnd(11, ' ');
+  const link = e.bbcUrl ? { l: e.bbcUrl } : {};
+  const isScored = typeof e.homeScore === 'number' && typeof e.awayScore === 'number';
+  const middle = isScored ? `${e.homeScore}-${e.awayScore}` : ' v ';
+  // Live state in red, finished/scheduled in white
+  const status = e.status || '';
+  const statusColour = /^\d+/.test(status) || status === 'LIVE' || status === 'HT' ? 'R'
+                     : status === 'FT' ? 'C' : 'W';
+  g.writeRow(row, home, 'W', 'K', 1, link);
+  g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13, link);
+  g.writeRow(row, away, 'W', 'K', 19, link);
+  g.writeRow(row, String(status).slice(0, 6).padStart(6, ' '), statusColour, 'K', 31, link);
+  if (e.stage || e.venue) {
+    const sub = `${(e.stage || '').replace(/^World - FIFA World Cup - /, '').slice(0, 24)}  ${(e.venue || '').slice(0, 12)}`.trim();
+    g.writeRow(row + 1, sub.slice(0, 38), 'C', 'K', 1, link);
+  }
+}
+
 function renderIndex(g) {
   const wc = data.worldcup();
   g.writeHeaderBand(305, 'WORLD CUP', { subPage: 1, totalSubPages: 1 });
@@ -71,47 +109,102 @@ function renderIndex(g) {
 }
 
 function renderFixtures(g) {
-  const wc = data.worldcup();
-  const fixtures = wc.todayFixtures || [];
-  if (isEmpty(fixtures)) return renderUnavailable(306, "TODAY'S FIXTURES", 'NO MATCHES TODAY OR DATA NOT YET LOADED');
-  g.writeHeaderBand(306, "TODAY'S FIXTURES", { subPage: 1, totalSubPages: 1 });
+  const buckets = wcLiveBuckets();
+  // Show whatever BBC's scores-fixtures page returned - they already scope
+  // it sensibly. The date filter was rejecting matches that BBC considers
+  // "today" but kick off after midnight UTC.
+  let events = [];
+  if (buckets) {
+    events = [...buckets.live, ...buckets.upcoming, ...buckets.finished];
+  }
+  if (isEmpty(events)) {
+    const wc = data.worldcup();
+    const fallback = wc.todayFixtures || [];
+    if (isEmpty(fallback)) return renderUnavailable(306, "TODAY'S FIXTURES", 'NO MATCHES TODAY');
+    g.writeHeaderBand(306, "TODAY'S FIXTURES", { subPage: 1, totalSubPages: 1 });
+    g.writeSectionTitle(2, "WORLD CUP TODAY", SECTION);
+    let row = 4;
+    for (const f of fallback) {
+      if (row > 21) break;
+      g.writeRow(row, f.time, 'Y', 'K', 1);
+      g.writeRow(row, pad(f.stage, 9), 'C', 'K', 7);
+      g.writeRow(row, pad(f.home, 10), 'W', 'K', 17);
+      g.writeRow(row, ' v ', 'Y', 'K', 28);
+      g.writeRow(row, pad(f.away, 10), 'W', 'K', 31);
+      row++;
+      if (f.venue) g.writeRow(row, pad(f.venue, 30), 'C', 'K', 7);
+      row += 2;
+    }
+    setWCFastext(g, 306);
+    g.writeFastextBar();
+    return g.toJSON({ page: 306, subPage: 1, totalSubPages: 1, title: "TODAY'S FIXTURES" });
+  }
+
+  // Sort: live first (most engaging), then upcoming by kickoff, then finished
+  events.sort((a, b) => {
+    const liveA = /^\d+|^LIVE|^HT/.test(a.status) ? 0 : (a.status === 'FT' ? 2 : 1);
+    const liveB = /^\d+|^LIVE|^HT/.test(b.status) ? 0 : (b.status === 'FT' ? 2 : 1);
+    if (liveA !== liveB) return liveA - liveB;
+    return (a.kickoffISO || '').localeCompare(b.kickoffISO || '');
+  });
+
+  const perPage = 6;
+  const total = Math.max(1, Math.ceil(events.length / perPage));
+  g.writeHeaderBand(306, "TODAY'S FIXTURES", { subPage: 1, totalSubPages: total });
   g.writeSectionTitle(2, "WORLD CUP TODAY", SECTION);
   let row = 4;
-  for (const f of fixtures) {
+  for (const e of events.slice(0, perPage)) {
     if (row > 21) break;
-    g.writeRow(row, f.time, 'Y', 'K', 1);
-    g.writeRow(row, pad(f.stage, 9), 'C', 'K', 7);
-    g.writeRow(row, pad(f.home, 10), 'W', 'K', 17);
-    g.writeRow(row, ' v ', 'Y', 'K', 28);
-    g.writeRow(row, pad(f.away, 10), 'W', 'K', 31);
-    row++;
-    if (f.venue) g.writeRow(row, pad(f.venue, 30), 'C', 'K', 7);
-    row += 2;
+    writeMatchPair(g, row, e);
+    row += 3;
   }
+  g.writeRow(23, 'TAP A MATCH FOR BBC LIVE TEXT', 'C', 'K', 0);
   setWCFastext(g, 306);
   g.writeFastextBar();
-  return g.toJSON({ page: 306, subPage: 1, totalSubPages: 1, title: "TODAY'S FIXTURES" });
+  return g.toJSON({ page: 306, subPage: 1, totalSubPages: total, title: "TODAY'S FIXTURES" });
 }
 
 function renderResults(g, subPage) {
-  const results = data.worldcup().yesterdayResults || [];
-  if (isEmpty(results)) return renderUnavailable(307, 'RESULTS', 'NO RESULTS YESTERDAY OR DATA NOT YET LOADED');
-  const total = Math.max(1, Math.ceil(results.length / PER_FIXTURE_PAGE));
+  const buckets = wcLiveBuckets();
+  let finished = buckets ? buckets.finished : [];
+  if (isEmpty(finished)) {
+    const fallback = data.worldcup().yesterdayResults || [];
+    if (isEmpty(fallback)) return renderUnavailable(307, 'RESULTS', 'NO RESULTS YESTERDAY');
+    const total = Math.max(1, Math.ceil(fallback.length / PER_FIXTURE_PAGE));
+    const sub = Math.min(Math.max(1, subPage), total);
+    g.writeHeaderBand(307, 'RESULTS', { subPage: sub, totalSubPages: total });
+    g.writeSectionTitle(2, "WORLD CUP RESULTS", SECTION);
+    let row = 4;
+    const slice = fallback.slice((sub - 1) * PER_FIXTURE_PAGE, sub * PER_FIXTURE_PAGE);
+    for (const f of slice) {
+      if (row > 21) break;
+      g.writeRow(row, pad(f.stage, 9), 'C', 'K', 1);
+      g.writeRow(row, pad(f.home, 11), 'W', 'K', 11);
+      g.writeRow(row, `${f.homeScore}-${f.awayScore}`, 'Y', 'K', 23);
+      g.writeRow(row, pad(f.away, 11), 'W', 'K', 28);
+      row++;
+      if (f.venue) g.writeRow(row, pad(f.venue, 30), 'C', 'K', 11);
+      row += 2;
+    }
+    setWCFastext(g, 307);
+    g.writeFastextBar();
+    return g.toJSON({ page: 307, subPage: sub, totalSubPages: total, title: 'RESULTS' });
+  }
+
+  finished.sort((a, b) => (b.kickoffISO || '').localeCompare(a.kickoffISO || ''));
+  const perPage = 6;
+  const total = Math.max(1, Math.ceil(finished.length / perPage));
   const sub = Math.min(Math.max(1, subPage), total);
   g.writeHeaderBand(307, 'RESULTS', { subPage: sub, totalSubPages: total });
   g.writeSectionTitle(2, "WORLD CUP RESULTS", SECTION);
   let row = 4;
-  const slice = results.slice((sub - 1) * PER_FIXTURE_PAGE, sub * PER_FIXTURE_PAGE);
-  for (const f of slice) {
+  const slice = finished.slice((sub - 1) * perPage, sub * perPage);
+  for (const e of slice) {
     if (row > 21) break;
-    g.writeRow(row, pad(f.stage, 9), 'C', 'K', 1);
-    g.writeRow(row, pad(f.home, 11), 'W', 'K', 11);
-    g.writeRow(row, `${f.homeScore}-${f.awayScore}`, 'Y', 'K', 23);
-    g.writeRow(row, pad(f.away, 11), 'W', 'K', 28);
-    row++;
-    if (f.venue) g.writeRow(row, pad(f.venue, 30), 'C', 'K', 11);
-    row += 2;
+    writeMatchPair(g, row, e);
+    row += 3;
   }
+  g.writeRow(23, 'TAP A MATCH FOR BBC LIVE TEXT', 'C', 'K', 0);
   setWCFastext(g, 307);
   g.writeFastextBar();
   return g.toJSON({ page: 307, subPage: sub, totalSubPages: total, title: 'RESULTS' });

@@ -29,10 +29,11 @@ module.exports = {
   travel: () => fromCacheOrStub('travel'),
   worldcup: () => fromCacheOrStub('worldcup'),
   bbcSport: () => cache.payload('bbcSport') || null,
+  bbcLive:  () => cache.payload('bbcLive')  || null,
   // Status of any data domain, surfaced via /healthz for debugging.
   status() {
     const out = {};
-    for (const key of ['news', 'football', 'weather', 'tv', 'bbcSport', 'lottery']) {
+    for (const key of ['news', 'football', 'weather', 'tv', 'bbcSport', 'bbcLive', 'lottery']) {
       const entry = cache.get(key);
       out[key] = entry
         ? { source: 'live', ageMs: Date.now() - entry.fetchedAt }

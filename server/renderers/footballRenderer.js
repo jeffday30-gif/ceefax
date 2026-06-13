@@ -143,20 +143,60 @@ function renderFootballIndex(g, pageNum) {
 }
 
 function renderLiveScores(g, subPage) {
-  const pl = data.football();
-  const fixtures = (pl && pl.premierLeague && pl.premierLeague.fixtures) || [];
-  if (isEmpty(fixtures)) return renderUnavailable(303, 'LIVE SCORES', 'NO PREMIER LEAGUE MATCHES SCHEDULED OR DATA NOT YET LOADED');
-  const total = Math.max(1, Math.ceil(fixtures.length / PER_FIXTURE_PAGE));
+  const bbc = data.bbcLive();
+  let events = [];
+  if (bbc && bbc.premierLeague) {
+    events = [...bbc.premierLeague.live, ...bbc.premierLeague.finished, ...bbc.premierLeague.upcoming];
+  }
+  // Fall back to football-data.org payload shape if BBC has nothing.
+  if (isEmpty(events)) {
+    const pl = data.football();
+    const fixtures = (pl && pl.premierLeague && pl.premierLeague.fixtures) || [];
+    if (isEmpty(fixtures)) return renderUnavailable(303, 'LIVE SCORES', 'NO PREMIER LEAGUE MATCHES THIS WEEKEND');
+    const total = Math.max(1, Math.ceil(fixtures.length / PER_FIXTURE_PAGE));
+    const sub = Math.min(Math.max(1, subPage), total);
+    g.writeHeaderBand(303, 'SCORES', { subPage: sub, totalSubPages: total });
+    g.writeSectionTitle(2, 'PREMIER LEAGUE - LIVE', SECTION);
+    const slice = fixtures.slice((sub - 1) * PER_FIXTURE_PAGE, sub * PER_FIXTURE_PAGE);
+    let row = 4;
+    for (const fx of slice) {
+      if (row > 22) break;
+      fixturesRow(g, row, fx);
+      row += 2;
+    }
+    setFootyFastext(g, 303);
+    g.writeFastextBar();
+    return g.toJSON({ page: 303, subPage: sub, totalSubPages: total, title: 'LIVE SCORES' });
+  }
+  // Use BBC live data - same writeMatchPair as WC.
+  events.sort((a, b) => {
+    const lA = /^\d+|^LIVE|^HT/.test(a.status) ? 0 : (a.status === 'FT' ? 2 : 1);
+    const lB = /^\d+|^LIVE|^HT/.test(b.status) ? 0 : (b.status === 'FT' ? 2 : 1);
+    if (lA !== lB) return lA - lB;
+    return (a.kickoffISO || '').localeCompare(b.kickoffISO || '');
+  });
+  const perPage = 6;
+  const total = Math.max(1, Math.ceil(events.length / perPage));
   const sub = Math.min(Math.max(1, subPage), total);
   g.writeHeaderBand(303, 'SCORES', { subPage: sub, totalSubPages: total });
   g.writeSectionTitle(2, 'PREMIER LEAGUE - LIVE', SECTION);
-  const slice = fixtures.slice((sub - 1) * PER_FIXTURE_PAGE, sub * PER_FIXTURE_PAGE);
   let row = 4;
-  for (const fx of slice) {
-    if (row > 22) break;
-    fixturesRow(g, row, fx);
+  for (const e of events.slice((sub - 1) * perPage, sub * perPage)) {
+    if (row > 21) break;
+    const link = e.bbcUrl ? { l: e.bbcUrl } : {};
+    const home = String(e.home || '').slice(0, 11).padEnd(11, ' ');
+    const away = String(e.away || '').slice(0, 11).padEnd(11, ' ');
+    const scored = typeof e.homeScore === 'number' && typeof e.awayScore === 'number';
+    const middle = scored ? `${e.homeScore}-${e.awayScore}` : ' v ';
+    const statusColour = /^\d+/.test(e.status) || e.status === 'LIVE' || e.status === 'HT' ? 'R'
+                       : e.status === 'FT' ? 'C' : 'W';
+    g.writeRow(row, home, 'W', 'K', 1, link);
+    g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13, link);
+    g.writeRow(row, away, 'W', 'K', 19, link);
+    g.writeRow(row, String(e.status || '').slice(0, 6).padStart(6, ' '), statusColour, 'K', 31, link);
     row += 2;
   }
+  g.writeRow(23, 'TAP A MATCH FOR BBC LIVE TEXT', 'C', 'K', 0);
   setFootyFastext(g, 303);
   g.writeFastextBar();
   return g.toJSON({ page: 303, subPage: sub, totalSubPages: total, title: 'LIVE SCORES' });
