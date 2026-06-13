@@ -1,0 +1,47 @@
+{
+  "fetchedAt": "2026-06-13T12:00:00Z",
+  "headlines": [
+    "England chase down 287 to beat Australia",
+    "Verstappen on pole at Silverstone GP",
+    "Wales secure dramatic rugby win in Cardiff",
+    "Rory McIlroy leads US Open by two shots"
+  ],
+  "cricket": {
+    "summary": "England 287/4 (49.2 ov) beat Australia 286/8 by 6 wickets at Edgbaston.",
+    "scorecard": [
+      { "player": "Root",     "runs": 102, "balls": 88 },
+      { "player": "Bairstow", "runs":  74, "balls": 61 },
+      { "player": "Brook",    "runs":  44, "balls": 32 },
+      { "player": "Stokes",   "runs":  31, "balls": 24 }
+    ],
+    "next": "England v Australia, 2nd ODI, Lord's, Tue 15:00"
+  },
+  "formula1": {
+    "next": "British Grand Prix, Silverstone, Sunday 15:00",
+    "qualifying": [
+      { "pos": 1, "driver": "Verstappen", "team": "Red Bull",  "time": "1:25.143" },
+      { "pos": 2, "driver": "Norris",     "team": "McLaren",   "time": "1:25.298" },
+      { "pos": 3, "driver": "Hamilton",   "team": "Mercedes",  "time": "1:25.412" },
+      { "pos": 4, "driver": "Leclerc",    "team": "Ferrari",   "time": "1:25.480" },
+      { "pos": 5, "driver": "Russell",    "team": "Mercedes",  "time": "1:25.512" },
+      { "pos": 6, "driver": "Piastri",    "team": "McLaren",   "time": "1:25.601" }
+    ]
+  },
+  "rugby": {
+    "fixtures": [
+      { "home": "Wales",   "away": "Italy",     "homeScore": 28, "awayScore": 17, "status": "FT" },
+      { "home": "Ireland", "away": "France",    "homeScore": 21, "awayScore": 21, "status": "FT" },
+      { "home": "England", "away": "Scotland",  "homeScore": 33, "awayScore": 12, "status": "FT" }
+    ]
+  },
+  "golf": {
+    "tournament": "US Open, Pinehurst",
+    "leaderboard": [
+      { "pos": 1, "player": "McIlroy",     "score": "-12" },
+      { "pos": 2, "player": "Schauffele",  "score": "-10" },
+      { "pos": 3, "player": "Scheffler",   "score":  "-9" },
+      { "pos": 4, "player": "Cantlay",     "score":  "-7" },
+      { "pos": 5, "player": "Lowry",       "score":  "-6" }
+    ]
+  }
+}

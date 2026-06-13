@@ -1,0 +1,19 @@
+{
+  "name": "ceefax",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ceefax Reborn - mobile-first PWA recreation of BBC Ceefax",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --watch --env-file-if-exists=.env server/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "express": "^4.21.1",
+    "node-cron": "^3.0.3",
+    "rss-parser": "^3.13.0"
+  }
+}

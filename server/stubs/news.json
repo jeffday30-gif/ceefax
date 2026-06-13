@@ -1,0 +1,48 @@
+{
+  "fetchedAt": "2026-06-13T12:00:00Z",
+  "headlines": [
+    {
+      "title": "PM announces summer infrastructure plan",
+      "summary": "The Prime Minister has unveiled a major package of investment in rail, road and renewable energy projects, promising tens of thousands of jobs across the country.",
+      "category": "UK"
+    },
+    {
+      "title": "Bank of England holds interest rate at 4.25%",
+      "summary": "Policymakers voted seven to two to leave the base rate unchanged this month, citing easing inflation but persistent service-sector price pressures.",
+      "category": "Business"
+    },
+    {
+      "title": "England beat Australia in cricket thriller",
+      "summary": "A century from the captain saw England chase down a target of 287 at Edgbaston with one over to spare in front of a record crowd.",
+      "category": "Sport"
+    },
+    {
+      "title": "Heatwave forecast for southern England",
+      "summary": "Temperatures could reach 30C across south and east England by Wednesday, the Met Office said, with an amber heat-health alert in force.",
+      "category": "UK"
+    },
+    {
+      "title": "World leaders gather for climate summit",
+      "summary": "More than forty heads of government are meeting in Brussels this week to agree new emissions targets ahead of the autumn UN talks.",
+      "category": "World"
+    },
+    {
+      "title": "Train strike called off after talks",
+      "summary": "A planned three-day strike by rail workers next week has been suspended after union leaders accepted a revised pay offer from operators.",
+      "category": "UK"
+    },
+    {
+      "title": "Tech firm reports record quarter",
+      "summary": "Profits at the FTSE-listed software company jumped 38 per cent year-on-year, driven by strong demand for its cloud and AI products.",
+      "category": "Business"
+    }
+  ],
+  "newsInBrief": [
+    "Police investigating M25 lorry crash say no one was hurt.",
+    "New blue plaque unveiled at Hampstead poet's home.",
+    "London Underground Bakerloo line closed this weekend.",
+    "Royal Mail launches stamps marking 50 years of CEEFAX.",
+    "Channel Tunnel reopens after overnight signalling fault.",
+    "Edinburgh Festival opens with record ticket sales."
+  ]
+}

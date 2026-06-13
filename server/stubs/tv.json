@@ -1,0 +1,79 @@
+{
+  "fetchedAt": "2026-06-13T12:00:00Z",
+  "channels": {
+    "BBC One": [
+      { "time": "06:00", "title": "Breakfast" },
+      { "time": "09:15", "title": "Saturday Kitchen Live" },
+      { "time": "10:45", "title": "Football Focus" },
+      { "time": "12:00", "title": "BBC News at One" },
+      { "time": "13:00", "title": "Bargain Hunt" },
+      { "time": "14:00", "title": "Escape to the Country" },
+      { "time": "15:00", "title": "Final Score" },
+      { "time": "17:30", "title": "BBC News" },
+      { "time": "18:00", "title": "Pointless" },
+      { "time": "19:00", "title": "Strictly Come Dancing" },
+      { "time": "20:30", "title": "Casualty" },
+      { "time": "21:20", "title": "Match of the Day" },
+      { "time": "22:30", "title": "BBC News at Ten" },
+      { "time": "23:00", "title": "Mrs Brown's Boys" }
+    ],
+    "BBC Two": [
+      { "time": "06:30", "title": "Gardeners' World" },
+      { "time": "08:00", "title": "Saturday Morning Live" },
+      { "time": "10:00", "title": "Homes Under the Hammer" },
+      { "time": "12:00", "title": "MasterChef" },
+      { "time": "13:30", "title": "Coast" },
+      { "time": "15:00", "title": "Snooker: World Open" },
+      { "time": "18:00", "title": "Springwatch" },
+      { "time": "19:00", "title": "Dad's Army" },
+      { "time": "19:30", "title": "Antiques Roadshow" },
+      { "time": "20:30", "title": "Horizon" },
+      { "time": "21:30", "title": "Newsnight" },
+      { "time": "22:15", "title": "Film: The Italian Job" }
+    ],
+    "ITV": [
+      { "time": "06:00", "title": "Good Morning Britain" },
+      { "time": "09:00", "title": "Lorraine" },
+      { "time": "10:00", "title": "This Morning" },
+      { "time": "12:30", "title": "Loose Women" },
+      { "time": "13:30", "title": "ITV News" },
+      { "time": "14:00", "title": "Tipping Point" },
+      { "time": "15:00", "title": "The Chase" },
+      { "time": "17:00", "title": "Tenable" },
+      { "time": "18:00", "title": "ITV News" },
+      { "time": "19:00", "title": "Coronation Street" },
+      { "time": "19:30", "title": "Emmerdale" },
+      { "time": "20:00", "title": "Britain's Got Talent" },
+      { "time": "21:30", "title": "I'm a Celebrity" },
+      { "time": "22:30", "title": "ITV News at Ten" }
+    ],
+    "Channel 4": [
+      { "time": "06:00", "title": "Channel 4 News" },
+      { "time": "09:00", "title": "The Big Breakfast" },
+      { "time": "11:00", "title": "Sunday Brunch" },
+      { "time": "13:00", "title": "Come Dine With Me" },
+      { "time": "15:00", "title": "A Place in the Sun" },
+      { "time": "17:00", "title": "Countdown" },
+      { "time": "18:00", "title": "Channel 4 News" },
+      { "time": "19:00", "title": "Hollyoaks" },
+      { "time": "20:00", "title": "Grand Designs" },
+      { "time": "21:00", "title": "Gogglebox" },
+      { "time": "22:00", "title": "The Last Leg" },
+      { "time": "23:00", "title": "Film: Trainspotting" }
+    ],
+    "Channel 5": [
+      { "time": "06:00", "title": "Milkshake!" },
+      { "time": "09:00", "title": "Jeremy Vine" },
+      { "time": "11:00", "title": "Storage Wars" },
+      { "time": "13:00", "title": "5 News" },
+      { "time": "13:30", "title": "Cricket: T20 Highlights" },
+      { "time": "15:30", "title": "Police Interceptors" },
+      { "time": "17:00", "title": "5 News" },
+      { "time": "18:00", "title": "All Creatures Great and Small" },
+      { "time": "19:00", "title": "World's Most Scenic Railways" },
+      { "time": "20:00", "title": "Casualty 24/7" },
+      { "time": "21:00", "title": "Cruising with Susan Calman" },
+      { "time": "22:00", "title": "Film: Top Gun" }
+    ]
+  }
+}

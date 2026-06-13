@@ -1,0 +1,36 @@
+{
+  "fetchedAt": "2026-06-13T12:00:00Z",
+  "outlook": "High pressure brings warm sunshine to most of the UK today. Showers possible in the far north-west. Temperatures rising to 28C in the south-east tomorrow.",
+  "cities": [
+    { "name": "London",     "tempC": 24, "condition": "Sunny",        "wind": "SW 8mph" },
+    { "name": "Manchester", "tempC": 19, "condition": "Cloudy",       "wind": "W 12mph" },
+    { "name": "Birmingham", "tempC": 22, "condition": "Sunny spells", "wind": "SW 9mph" },
+    { "name": "Leeds",      "tempC": 18, "condition": "Cloudy",       "wind": "W 10mph" },
+    { "name": "Liverpool",  "tempC": 18, "condition": "Showers",      "wind": "W 14mph" },
+    { "name": "Bristol",    "tempC": 23, "condition": "Sunny",        "wind": "SW 7mph" },
+    { "name": "Newcastle",  "tempC": 17, "condition": "Cloudy",       "wind": "N 11mph" },
+    { "name": "Edinburgh",  "tempC": 16, "condition": "Light rain",   "wind": "NW 13mph" },
+    { "name": "Cardiff",    "tempC": 22, "condition": "Sunny",        "wind": "SW 8mph" },
+    { "name": "Belfast",    "tempC": 17, "condition": "Showers",      "wind": "W 15mph" }
+  ],
+  "fiveDay": [
+    { "day": "Today", "high": 24, "low": 14, "icon": "Sunny" },
+    { "day": "Sun",   "high": 27, "low": 16, "icon": "Sunny" },
+    { "day": "Mon",   "high": 28, "low": 17, "icon": "Sunny" },
+    { "day": "Tue",   "high": 25, "low": 16, "icon": "Cloudy" },
+    { "day": "Wed",   "high": 22, "low": 14, "icon": "Showers" }
+  ],
+  "regions": {
+    "scotland":         "Cooler with cloud and patchy rain in the west. Drier in the east. Highs 14 to 18C.",
+    "wales":            "Sunny spells in the south, cloudier north. Highs 19 to 23C.",
+    "northernIreland":  "Cloudy with scattered showers, brighter intervals later. Highs 16 to 18C.",
+    "world": [
+      { "city": "Paris",  "tempC": 26, "condition": "Sunny" },
+      { "city": "Madrid", "tempC": 34, "condition": "Hot" },
+      { "city": "Rome",   "tempC": 30, "condition": "Sunny" },
+      { "city": "Berlin", "tempC": 22, "condition": "Cloudy" },
+      { "city": "New York","tempC": 25, "condition": "Sunny" },
+      { "city": "Sydney", "tempC": 12, "condition": "Cool" }
+    ]
+  }
+}
