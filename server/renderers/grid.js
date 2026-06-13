@@ -37,6 +37,7 @@ class Grid {
     if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
     const cell = { c: char, f: fg, b: bg };
     if (extra.d) cell.d = 1;
+    if (extra.l) cell.l = extra.l;
     this.cells[row][col] = cell;
   }
 
@@ -58,8 +59,9 @@ class Grid {
   }
 
   // Word-wrap `text` into rows [startRow..endRow] inclusive starting at `indent`.
-  // Returns the next free row.
-  writeWrapped(startRow, endRow, text, fg = 'W', bg = 'K', indent = 0) {
+  // Returns the next free row. `extra` cascades to every cell written, so a
+  // wrapped headline with `{l: url}` makes the whole headline tappable.
+  writeWrapped(startRow, endRow, text, fg = 'W', bg = 'K', indent = 0, extra = {}) {
     const width = COLS - indent;
     if (width <= 0) return startRow;
     const words = String(text).split(/\s+/).filter(Boolean);
@@ -72,14 +74,14 @@ class Grid {
       } else if (line.length + 1 + w.length <= width) {
         line += ' ' + w;
       } else {
-        this.writeRow(row, line, fg, bg, indent);
+        this.writeRow(row, line, fg, bg, indent, extra);
         row++;
         if (row > endRow) return row;
         line = w.slice(0, width);
       }
     }
     if (line && row <= endRow) {
-      this.writeRow(row, line, fg, bg, indent);
+      this.writeRow(row, line, fg, bg, indent, extra);
       row++;
     }
     return row;

@@ -1,5 +1,6 @@
 const { Grid } = require('./grid');
 const data = require('../data');
+const { renderUnavailable, isEmpty } = require('./helpers');
 
 const SECTION = 'G';
 const PER_FIXTURE_PAGE = 6;
@@ -8,15 +9,13 @@ function pad(s, n) { return String(s).padEnd(n, ' ').slice(0, n); }
 function rpad(s, n) { return String(s).padStart(n, ' ').slice(-n); }
 
 function setWCFastext(g, current) {
-  // Contextual fastext for World Cup pages: next page in the WC range plus
-  // a jump back to football and sport indexes.
   const map = {
     305: [{ label: 'FIXTURES', page: 306 }, { label: 'RESULTS', page: 307 }, { label: 'GROUPS', page: 326 }, { label: 'FOOTBALL', page: 302 }],
     306: [{ label: 'RESULTS',  page: 307 }, { label: 'GROUPS',  page: 326 }, { label: 'TOP SCRS', page: 328 }, { label: 'WC INDEX', page: 305 }],
     307: [{ label: 'FIXTURES', page: 306 }, { label: 'GROUPS',  page: 326 }, { label: 'KNOCKOUT', page: 327 }, { label: 'WC INDEX', page: 305 }],
     326: [{ label: 'FIXTURES', page: 306 }, { label: 'KNOCKOUT',page: 327 }, { label: 'TOP SCRS', page: 328 }, { label: 'WC INDEX', page: 305 }],
-    327: [{ label: 'GROUPS',   page: 326 }, { label: 'TOP SCRS',page: 328 }, { label: 'ENGLAND',  page: 329 }, { label: 'WC INDEX', page: 305 }],
-    328: [{ label: 'GROUPS',   page: 326 }, { label: 'KNOCKOUT',page: 327 }, { label: 'ENGLAND',  page: 329 }, { label: 'WC INDEX', page: 305 }],
+    327: [{ label: 'GROUPS',   page: 326 }, { label: 'TOP SCRS',page: 328 }, { label: 'WC NEWS',  page: 329 }, { label: 'WC INDEX', page: 305 }],
+    328: [{ label: 'GROUPS',   page: 326 }, { label: 'KNOCKOUT',page: 327 }, { label: 'WC NEWS',  page: 329 }, { label: 'WC INDEX', page: 305 }],
     329: [{ label: 'WC INDEX', page: 305 }, { label: 'FIXTURES',page: 306 }, { label: 'GROUPS',   page: 326 }, { label: 'FOOTBALL', page: 302 }],
   };
   g.setFastext(map[current] || [
@@ -27,19 +26,27 @@ function setWCFastext(g, current) {
   ]);
 }
 
+function wcHeadlines() {
+  const sport = data.bbcSport();
+  if (sport && Array.isArray(sport.worldCup) && sport.worldCup.length) return sport.worldCup;
+  if (sport && Array.isArray(sport.football) && sport.football.length) return sport.football;
+  return [];
+}
+
 function renderIndex(g) {
+  const wc = data.worldcup();
   g.writeHeaderBand(305, 'WORLD CUP', { subPage: 1, totalSubPages: 1 });
-  g.writeSectionTitle(2, 'FIFA WORLD CUP 2026', SECTION);
-  g.writeCentered(4, data.worldcup().hosts.toUpperCase(), 'C', 'K');
-  g.writeCentered(5, data.worldcup().stage.toUpperCase(), 'Y', 'K');
+  g.writeSectionTitle(2, wc.tournament || 'WORLD CUP 2026', SECTION);
+  if (wc.hosts) g.writeCentered(4, wc.hosts.toUpperCase(), 'C', 'K');
+  if (wc.dates) g.writeCentered(5, wc.dates, 'Y', 'K');
 
   const items = [
     ["Today's fixtures",   306],
-    ['Yesterday\'s results',307],
+    ["Yesterday's results",307],
     ['Group tables',       326],
     ['Knockout bracket',   327],
     ['Top scorers',        328],
-    ['England team',       329],
+    ['World Cup news',     329],
     ['Football index',     302],
   ];
   let row = 8;
@@ -48,11 +55,15 @@ function renderIndex(g) {
     g.writeRow(row, String(page), 'Y', 'K', 30);
     row++;
   }
-  row += 1;
-  g.writeRow(row++, 'TOP STORY', 'Y', 'K', 1);
-  for (const h of data.worldcup().headlines.slice(0, 3)) {
-    if (row > 22) break;
-    row = g.writeWrapped(row, 22, '* ' + h, 'W', 'K', 1);
+  const headlines = wcHeadlines();
+  if (!isEmpty(headlines)) {
+    row += 1;
+    g.writeRow(row++, 'LATEST', 'Y', 'K', 1);
+    for (const h of headlines.slice(0, 3)) {
+      if (row > 22) break;
+      const link = h.link ? { l: h.link } : {};
+      row = g.writeWrapped(row, 22, '* ' + h.title, 'W', 'K', 1, link);
+    }
   }
   setWCFastext(g, 305);
   g.writeFastextBar();
@@ -60,10 +71,13 @@ function renderIndex(g) {
 }
 
 function renderFixtures(g) {
+  const wc = data.worldcup();
+  const fixtures = wc.todayFixtures || [];
+  if (isEmpty(fixtures)) return renderUnavailable(306, "TODAY'S FIXTURES", 'NO MATCHES TODAY OR DATA NOT YET LOADED');
   g.writeHeaderBand(306, "TODAY'S FIXTURES", { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, "WORLD CUP TODAY", SECTION);
   let row = 4;
-  for (const f of data.worldcup().todayFixtures) {
+  for (const f of fixtures) {
     if (row > 21) break;
     g.writeRow(row, f.time, 'Y', 'K', 1);
     g.writeRow(row, pad(f.stage, 9), 'C', 'K', 7);
@@ -71,7 +85,7 @@ function renderFixtures(g) {
     g.writeRow(row, ' v ', 'Y', 'K', 28);
     g.writeRow(row, pad(f.away, 10), 'W', 'K', 31);
     row++;
-    g.writeRow(row, pad(f.venue, 30), 'C', 'K', 7);
+    if (f.venue) g.writeRow(row, pad(f.venue, 30), 'C', 'K', 7);
     row += 2;
   }
   setWCFastext(g, 306);
@@ -80,7 +94,8 @@ function renderFixtures(g) {
 }
 
 function renderResults(g, subPage) {
-  const results = data.worldcup().yesterdayResults;
+  const results = data.worldcup().yesterdayResults || [];
+  if (isEmpty(results)) return renderUnavailable(307, 'RESULTS', 'NO RESULTS YESTERDAY OR DATA NOT YET LOADED');
   const total = Math.max(1, Math.ceil(results.length / PER_FIXTURE_PAGE));
   const sub = Math.min(Math.max(1, subPage), total);
   g.writeHeaderBand(307, 'RESULTS', { subPage: sub, totalSubPages: total });
@@ -94,7 +109,7 @@ function renderResults(g, subPage) {
     g.writeRow(row, `${f.homeScore}-${f.awayScore}`, 'Y', 'K', 23);
     g.writeRow(row, pad(f.away, 11), 'W', 'K', 28);
     row++;
-    g.writeRow(row, pad(f.venue, 30), 'C', 'K', 11);
+    if (f.venue) g.writeRow(row, pad(f.venue, 30), 'C', 'K', 11);
     row += 2;
   }
   setWCFastext(g, 307);
@@ -103,13 +118,13 @@ function renderResults(g, subPage) {
 }
 
 function renderGroupTables(g, subPage) {
-  const groups = data.worldcup().groups;
+  const groups = data.worldcup().groups || [];
+  if (isEmpty(groups)) return renderUnavailable(326, 'GROUP TABLES', 'GROUPS NOT YET CONFIRMED');
   const total = groups.length;
   const sub = Math.min(Math.max(1, subPage), total);
   const group = groups[sub - 1];
   g.writeHeaderBand(326, `GROUP ${group.name}`, { subPage: sub, totalSubPages: total });
   g.writeSectionTitle(2, `WORLD CUP - GROUP ${group.name}`, SECTION);
-  // Column headers in cyan per Ceefax convention.
   g.writeRow(4, 'Team',  'C', 'K', 2);
   g.writeRow(4, 'P',     'C', 'K', 18);
   g.writeRow(4, 'W',     'C', 'K', 21);
@@ -121,7 +136,6 @@ function renderGroupTables(g, subPage) {
   let row = 6;
   for (let i = 0; i < group.table.length; i++) {
     const t = group.table[i];
-    // Leader in yellow, second place white, others slightly muted.
     const fg = i === 0 ? 'Y' : (i === 1 ? 'W' : 'C');
     g.writeRow(row, pad(t.team, 14),    fg, 'K', 2);
     g.writeRow(row, rpad(t.p, 2),       fg, 'K', 17);
@@ -142,9 +156,9 @@ function renderKnockout(g) {
   g.writeHeaderBand(327, 'KNOCKOUT', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, "WORLD CUP - KNOCKOUT", SECTION);
   g.writeCentered(4, 'ROUND OF 32 - FROM 27 JUN', 'Y', 'K');
-  g.writeCentered(6, 'Group winners enter directly.', 'W', 'K');
-  g.writeCentered(7, 'Runners-up and 8 best 3rds', 'W', 'K');
-  g.writeCentered(8, 'play in opening round.', 'W', 'K');
+  g.writeCentered(6, '48 teams - Group winners and', 'W', 'K');
+  g.writeCentered(7, 'runners-up plus 8 best 3rds', 'W', 'K');
+  g.writeCentered(8, 'enter the knockout stage.', 'W', 'K');
 
   g.writeRow(11, 'KEY DATES', 'Y', 'K', 1);
   const dates = [
@@ -168,15 +182,17 @@ function renderKnockout(g) {
 }
 
 function renderTopScorers(g) {
+  const scorers = data.worldcup().topScorers || [];
+  if (isEmpty(scorers)) return renderUnavailable(328, 'TOP SCORERS');
   g.writeHeaderBand(328, 'TOP SCORERS', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, "WORLD CUP - GOLDEN BOOT", SECTION);
   g.writeRow(4, 'Player',    'C', 'K', 2);
   g.writeRow(4, 'Team',      'C', 'K', 20);
   g.writeRow(4, 'Gls',       'C', 'K', 35);
   let row = 6;
-  for (let i = 0; i < data.worldcup().topScorers.length; i++) {
+  for (let i = 0; i < scorers.length; i++) {
     if (row > 22) break;
-    const s = data.worldcup().topScorers[i];
+    const s = scorers[i];
     const fg = i === 0 ? 'Y' : 'W';
     g.writeRow(row, pad(s.player, 16), fg, 'K', 2);
     g.writeRow(row, pad(s.team,   13), 'C', 'K', 20);
@@ -188,25 +204,25 @@ function renderTopScorers(g) {
   return g.toJSON({ page: 328, subPage: 1, totalSubPages: 1, title: 'TOP SCORERS' });
 }
 
-function renderEngland(g) {
-  const { englandSquad } = data.worldcup();
-  g.writeHeaderBand(329, 'ENGLAND', { subPage: 1, totalSubPages: 1 });
-  g.writeSectionTitle(2, "ENGLAND - WORLD CUP 2026", SECTION);
-  g.writeCentered(4, 'GROUP E', 'Y', 'K');
-  g.writeRow(6, 'Manager:', 'C', 'K', 2);
-  g.writeRow(6, englandSquad.manager, 'W', 'K', 13);
-  g.writeRow(7, 'Captain:', 'C', 'K', 2);
-  g.writeRow(7, englandSquad.captain, 'W', 'K', 13);
-  g.writeRow(9, 'LATEST', 'Y', 'K', 1);
-  g.writeWrapped(10, 14,
-    'England opened with a 2-1 win over Senegal in Dallas, ' +
-    'Kane and Foden the scorers.',
-    'W', 'K', 1);
-  g.writeRow(16, 'NEXT MATCH', 'Y', 'K', 1);
-  g.writeWrapped(17, 21, englandSquad.nextMatch, 'C', 'K', 1);
+function renderWCNews(g) {
+  const headlines = wcHeadlines();
+  if (isEmpty(headlines)) return renderUnavailable(329, 'WORLD CUP NEWS');
+  g.writeHeaderBand(329, 'WC NEWS', { subPage: 1, totalSubPages: 1 });
+  g.writeSectionTitle(2, "WORLD CUP NEWS", SECTION);
+  let row = 4;
+  for (const h of headlines.slice(0, 6)) {
+    if (row > 22) break;
+    const link = h.link ? { l: h.link } : {};
+    g.writeRow(row, '*', 'Y', 'K', 1);
+    row = g.writeWrapped(row, 22, h.title, 'C', 'K', 3, link);
+    if (h.summary && row <= 22) {
+      row = g.writeWrapped(row, 22, h.summary, 'W', 'K', 3, link);
+    }
+    row++;
+  }
   setWCFastext(g, 329);
   g.writeFastextBar();
-  return g.toJSON({ page: 329, subPage: 1, totalSubPages: 1, title: 'ENGLAND' });
+  return g.toJSON({ page: 329, subPage: 1, totalSubPages: 1, title: 'WORLD CUP NEWS' });
 }
 
 function render(pageNum, { subPage = 1 } = {}) {
@@ -217,7 +233,7 @@ function render(pageNum, { subPage = 1 } = {}) {
   if (pageNum === 326) return renderGroupTables(g, subPage);
   if (pageNum === 327) return renderKnockout(g);
   if (pageNum === 328) return renderTopScorers(g);
-  if (pageNum === 329) return renderEngland(g);
+  if (pageNum === 329) return renderWCNews(g);
   return renderIndex(g);
 }
 

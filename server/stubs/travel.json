@@ -1,25 +1,6 @@
 {
-  "fetchedAt": "2026-06-13T12:00:00Z",
-  "roads": [
-    { "road": "M25",  "junction": "J16 to J17", "status": "QUEUES", "note": "Long delays westbound, 30 minutes." },
-    { "road": "M1",   "junction": "J28 to J29", "status": "CLOSED", "note": "Accident, all lanes closed northbound." },
-    { "road": "M6",   "junction": "J10 to J12", "status": "SLOW",   "note": "Heavy traffic in both directions." },
-    { "road": "M4",   "junction": "J11 to J13", "status": "CLEAR",  "note": "No problems reported." },
-    { "road": "A1(M)","junction": "J45 to J47", "status": "QUEUES", "note": "Roadworks, contraflow in operation." },
-    { "road": "M62",  "junction": "J19 to J22", "status": "SLOW",   "note": "Heavy traffic over Pennines." }
-  ],
-  "rail": [
-    "Southern: minor delays London Bridge to Brighton",
-    "GWR: services running normally",
-    "LNER: 30 min delays York to Edinburgh",
-    "Avanti: services from Euston back to normal"
-  ],
-  "airports": [
-    { "name": "Heathrow",   "status": "On time",     "delays": "Minor delays terminal 5" },
-    { "name": "Gatwick",    "status": "On time",     "delays": "No reported issues" },
-    { "name": "Stansted",   "status": "Delays",      "delays": "60 min average departures" },
-    { "name": "Manchester", "status": "On time",     "delays": "No reported issues" },
-    { "name": "Birmingham", "status": "On time",     "delays": "No reported issues" },
-    { "name": "Edinburgh",  "status": "Delays",      "delays": "30 min arrivals delays" }
-  ]
+  "fetchedAt": null,
+  "roads":    [],
+  "rail":     [],
+  "airports": []
 }

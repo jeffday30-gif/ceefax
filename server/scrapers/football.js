@@ -152,12 +152,36 @@ async function fetchCompetition(http, code) {
 }
 
 async function fetchWorldCup(http) {
-  const [matchesRes, scorersRes] = await Promise.allSettled([
+  const [matchesRes, scorersRes, standingsRes] = await Promise.allSettled([
     http.get('/competitions/WC/matches'),
     http.get('/competitions/WC/scorers?limit=10'),
+    http.get('/competitions/WC/standings'),
   ]);
 
   const result = {};
+
+  if (standingsRes.status === 'fulfilled') {
+    const standings = standingsRes.value.data.standings || [];
+    const groups = standings
+      .filter((s) => s.group && (s.type === 'TOTAL' || !s.type))
+      .map((s) => ({
+        name: (s.group || '').replace(/^GROUP_/, ''),
+        table: (s.table || []).map((row) => ({
+          team: shortenTeam(row.team && (row.team.shortName || row.team.name)),
+          p: row.playedGames,
+          w: row.won,
+          d: row.draw,
+          l: row.lost,
+          f: row.goalsFor,
+          a: row.goalsAgainst,
+          pts: row.points,
+        })),
+      }))
+      .filter((g) => g.name && g.table.length);
+    if (groups.length) result.groups = groups;
+  } else {
+    console.warn('football: WC standings failed:', standingsRes.reason && standingsRes.reason.message);
+  }
 
   if (matchesRes.status === 'fulfilled') {
     const matches = matchesRes.value.data.matches || [];
@@ -230,7 +254,7 @@ async function run() {
         : (existing.topScorers || []),
     });
 
-    if (wc.todayFixtures || wc.yesterdayResults || wc.topScorers) {
+    if (wc.todayFixtures || wc.yesterdayResults || wc.topScorers || wc.groups) {
       const wcCache = cache.payload('worldcup') || {};
       cache.set('worldcup', {
         ...wcCache,
@@ -238,6 +262,7 @@ async function run() {
         todayFixtures:     wc.todayFixtures     || wcCache.todayFixtures,
         yesterdayResults:  wc.yesterdayResults  || wcCache.yesterdayResults,
         topScorers:        wc.topScorers        || wcCache.topScorers,
+        groups:            wc.groups            || wcCache.groups,
       });
     }
 

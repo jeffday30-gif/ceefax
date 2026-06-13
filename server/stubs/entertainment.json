@@ -1,33 +1,8 @@
 {
-  "fetchedAt": "2026-06-13T12:00:00Z",
-  "tvHighlights": [
-    { "time": "20:00", "channel": "BBC1", "title": "Strictly Come Dancing", "blurb": "The first live show of the new series." },
-    { "time": "21:00", "channel": "BBC1", "title": "Casualty", "blurb": "A major incident tests the team." },
-    { "time": "20:00", "channel": "ITV",  "title": "Britain's Got Talent", "blurb": "Semi-final week begins." },
-    { "time": "22:00", "channel": "C4",   "title": "The Last Leg",        "blurb": "Adam Hills hosts the week's news with guests." },
-    { "time": "21:00", "channel": "C5",   "title": "Cruising with Susan Calman", "blurb": "Susan boards a ship in Norway." }
-  ],
-  "filmReviews": [
-    { "title": "Dune: Awakening",      "stars": 5, "summary": "A breathtaking return to Arrakis with stunning visuals and a haunting score." },
-    { "title": "Quiet Hours",          "stars": 4, "summary": "A small British indie with a quietly devastating central performance." },
-    { "title": "The Big Heist 2",      "stars": 2, "summary": "Lazy sequel that wastes a strong cast on a tired script." }
-  ],
-  "musicNews": [
-    "Adele announces UK arena tour for autumn",
-    "Blur reunion album tops charts in first week",
-    "Glastonbury Sunday headliner revealed",
-    "Stormzy launches new record label"
-  ],
-  "whatsOn": [
-    { "venue": "Royal Albert Hall",  "event": "BBC Proms: Beethoven 9",  "when": "Sat 19:30" },
-    { "venue": "O2 Arena",            "event": "Coldplay",                "when": "Sun 20:00" },
-    { "venue": "National Theatre",    "event": "Hamlet",                  "when": "Daily 19:30" },
-    { "venue": "Tate Modern",         "event": "Hockney retrospective",   "when": "10:00-18:00" }
-  ],
-  "newsround": [
-    "School holiday reading challenge launched",
-    "Young inventors win national robotics prize",
-    "Rare seabird chicks hatched on Scottish island",
-    "Football star surprises hospital ward visit"
-  ]
+  "fetchedAt": null,
+  "tvHighlights": [],
+  "filmReviews":  [],
+  "musicNews":    [],
+  "whatsOn":      [],
+  "newsround":    []
 }

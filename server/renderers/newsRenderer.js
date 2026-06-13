@@ -1,5 +1,6 @@
 const { Grid } = require('./grid');
 const data = require('../data');
+const { renderUnavailable, isEmpty } = require('./helpers');
 
 const SECTION = 'R';
 
@@ -9,7 +10,6 @@ const NEWS_INDEX_ENTRIES = [
   ['News in brief',   150, 'Y'],
   ['UK news',         160, 'C'],
   ['World news',      170, 'C'],
-  ['Politics',        130, 'M'],
   ['Business news',   200, 'G'],
   ['Sport headlines', 301, 'G'],
   ['Weather',         400, 'C'],
@@ -36,17 +36,20 @@ function newsFastext(g, current) {
 }
 
 function renderHeadlines(g, subPage) {
-  const stories = data.news().headlines;
-  const total = Math.max(1, stories.length);
+  const stories = data.news().headlines || [];
+  if (isEmpty(stories)) return renderUnavailable(101, 'NEWS HEADLINES');
+  const total = stories.length;
   const sub = clampSub(subPage, total);
   const story = stories[sub - 1];
+  const url = story.link;
 
   g.writeHeaderBand(101, 'NEWS', { subPage: sub, totalSubPages: total });
   g.writeSectionTitle(2, 'NEWS HEADLINES', SECTION);
-  g.writeRow(4, story.category.toUpperCase(), 'C', 'K', 1);
-  let row = g.writeWrapped(6, 10, story.title, 'Y', 'K', 1);
+  g.writeRow(4, (story.category || '').toUpperCase(), 'C', 'K', 1);
+  let row = g.writeWrapped(6, 10, story.title, 'Y', 'K', 1, url ? { l: url } : {});
   row += 1;
-  g.writeWrapped(row, 22, story.summary, 'W', 'K', 1);
+  g.writeWrapped(row, 22, story.summary || '', 'W', 'K', 1, url ? { l: url } : {});
+  if (url) g.writeRow(23, 'TAP HEADLINE OR SUMMARY TO READ FULL ARTICLE', 'C', 'K', 0);
   newsFastext(g, 101);
   g.writeFastextBar();
   return g.toJSON({ page: 101, subPage: sub, totalSubPages: total, title: 'NEWS HEADLINES' });
@@ -63,9 +66,10 @@ function renderIndex(g, pageNum) {
   }
   row += 1;
   g.writeRow(row++, 'LATEST', 'Y', 'K', 1);
-  for (const s of data.news().headlines.slice(0, 3)) {
+  for (const s of (data.news().headlines || []).slice(0, 3)) {
     if (row > 22) break;
-    row = g.writeWrapped(row, 22, '* ' + s.title, 'C', 'K', 1);
+    const link = s.link ? { l: s.link } : {};
+    row = g.writeWrapped(row, 22, '* ' + s.title, 'C', 'K', 1, link);
   }
   newsFastext(g, pageNum);
   g.writeFastextBar();
@@ -73,10 +77,12 @@ function renderIndex(g, pageNum) {
 }
 
 function renderBrief(g) {
+  const brief = data.news().newsInBrief || [];
+  if (isEmpty(brief)) return renderUnavailable(150, 'NEWS IN BRIEF');
   g.writeHeaderBand(150, 'BRIEF', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'NEWS IN BRIEF', SECTION);
   let row = 4;
-  for (const item of data.news().newsInBrief) {
+  for (const item of brief) {
     if (row > 22) break;
     g.writeRow(row, '*', 'Y', 'K', 1);
     row = g.writeWrapped(row, 22, item, 'W', 'K', 3);
@@ -88,14 +94,16 @@ function renderBrief(g) {
 }
 
 function renderCategoryList(g, pageNum, title, categories) {
-  const stories = data.news().headlines.filter(s => categories.includes(s.category));
+  const stories = (data.news().headlines || []).filter(s => categories.includes(s.category));
+  if (isEmpty(stories)) return renderUnavailable(pageNum, title);
   g.writeHeaderBand(pageNum, title, { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, title, SECTION);
   let row = 4;
   for (const s of stories) {
     if (row > 22) break;
-    row = g.writeWrapped(row, 22, s.title, 'Y', 'K', 2);
-    row = g.writeWrapped(row, 22, s.summary, 'W', 'K', 2);
+    const link = s.link ? { l: s.link } : {};
+    row = g.writeWrapped(row, 22, s.title, 'Y', 'K', 2, link);
+    row = g.writeWrapped(row, 22, s.summary || '', 'W', 'K', 2, link);
     row++;
   }
   newsFastext(g, pageNum);
@@ -104,15 +112,17 @@ function renderCategoryList(g, pageNum, title, categories) {
 }
 
 function renderStory(g, pageNum) {
-  const stories = data.news().headlines;
+  const stories = data.news().headlines || [];
+  if (isEmpty(stories)) return renderUnavailable(pageNum, 'NEWS');
   const idx = (pageNum - 103) % stories.length;
   const story = stories[idx] || stories[0];
+  const link = story.link ? { l: story.link } : {};
   g.writeHeaderBand(pageNum, 'NEWS', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'NEWS STORY', SECTION);
-  g.writeRow(4, story.category.toUpperCase(), 'C', 'K', 1);
-  let row = g.writeWrapped(6, 10, story.title, 'Y', 'K', 1);
+  g.writeRow(4, (story.category || '').toUpperCase(), 'C', 'K', 1);
+  let row = g.writeWrapped(6, 10, story.title, 'Y', 'K', 1, link);
   row += 1;
-  g.writeWrapped(row, 22, story.summary, 'W', 'K', 1);
+  g.writeWrapped(row, 22, story.summary || '', 'W', 'K', 1, link);
   newsFastext(g, pageNum);
   g.writeFastextBar();
   return g.toJSON({ page: pageNum, subPage: 1, totalSubPages: 1, title: 'NEWS' });

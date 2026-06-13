@@ -44,6 +44,11 @@
       ctx.font = `${size}px "Bedstead", monospace`;
       ctx.fillText(ch, x, y);
     }
+    // Linked cells get a 1px cyan underline at the bottom of the cell.
+    if (cell.l) {
+      ctx.fillStyle = COLOURS.C;
+      ctx.fillRect(x, y + CELL_H - 1, CELL_W, 1);
+    }
   }
 
   function drawGrid(grid) {
@@ -200,6 +205,10 @@
       const block = Math.floor(col / 10);
       const page = FASTEXT_PAGES[block];
       if (page) navigate(page);
+      return;
+    }
+    if (current && current.grid && current.grid[row] && current.grid[row][col] && current.grid[row][col].l) {
+      window.open(current.grid[row][col].l, '_blank', 'noopener');
     }
   }
 

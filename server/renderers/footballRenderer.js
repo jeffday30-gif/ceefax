@@ -1,5 +1,6 @@
 const { Grid } = require('./grid');
 const data = require('../data');
+const { renderUnavailable, isEmpty } = require('./helpers');
 
 const SECTION = 'G';
 const PER_FIXTURE_PAGE = 8;
@@ -8,8 +9,13 @@ const TABLE_PER_PAGE = 18;
 function pad(s, n) { return String(s).padEnd(n, ' ').slice(0, n); }
 function rpad(s, n) { return String(s).padStart(n, ' ').slice(-n); }
 
+function bbcFootballHeadlines() {
+  const sport = data.bbcSport();
+  if (!sport) return [];
+  return Array.isArray(sport.football) ? sport.football : [];
+}
+
 function fixturesRow(g, row, fx) {
-  // Team names white, score yellow, "FT"/status white.
   g.writeRow(row, pad(fx.home, 14), 'W', 'K', 0);
   g.writeRow(row, `${fx.homeScore}-${fx.awayScore}`, 'Y', 'K', 15);
   g.writeRow(row, pad(fx.away, 14), 'W', 'K', 21);
@@ -17,7 +23,6 @@ function fixturesRow(g, row, fx) {
 }
 
 function tableHeader(g, row) {
-  // Cyan column headers per Ceefax convention.
   g.writeRow(row, ' #',    'C', 'K', 0);
   g.writeRow(row, 'Team',  'C', 'K', 3);
   g.writeRow(row, 'P',     'C', 'K', 25);
@@ -26,7 +31,6 @@ function tableHeader(g, row) {
 }
 
 function tableRow(g, row, entry, tableLen) {
-  // Authentic convention: leader yellow, mid-table white, bottom-3 red.
   let fg = 'W';
   if (entry.pos === 1) fg = 'Y';
   else if (entry.pos > tableLen - 3) fg = 'R';
@@ -44,7 +48,6 @@ function setFootyFastext(g, current) {
     301: [{ label: 'FOOTBALL',  page: 302 }, { label: 'WORLD CUP',page: 305 }, { label: 'CRICKET',   page: 340 }, { label: 'SPORT',    page: 300 }],
     302: [{ label: 'PL SCORES', page: 303 }, { label: 'PL TABLE', page: 324 }, { label: 'WORLD CUP', page: 305 }, { label: 'SPORT',    page: 300 }],
     303: [{ label: 'CHAMP',     page: 325 }, { label: 'PL TABLE', page: 324 }, { label: 'RESULTS',   page: 316 }, { label: 'FOOTBALL', page: 302 }],
-    306: [{ label: 'PL SCORES', page: 303 }, { label: 'WORLD CUP',page: 305 }, { label: 'RESULTS',   page: 316 }, { label: 'FOOTBALL', page: 302 }],
     312: [{ label: 'SCORES',    page: 303 }, { label: 'PL TABLE', page: 324 }, { label: 'WORLD CUP', page: 305 }, { label: 'FOOTBALL', page: 302 }],
     316: [{ label: 'PL TABLE',  page: 324 }, { label: 'CHAMP',    page: 325 }, { label: 'PL SCORES', page: 303 }, { label: 'FOOTBALL', page: 302 }],
     320: [{ label: 'PL SCORES', page: 303 }, { label: 'PL TABLE', page: 324 }, { label: 'WORLD CUP', page: 305 }, { label: 'SPORT',    page: 300 }],
@@ -88,17 +91,17 @@ function renderSportIndex(g) {
 }
 
 function renderSportHeadlines(g) {
-  const headlines = data.worldcup().headlines
-    .concat(data.sport().headlines)
-    .concat(data.football().headlines)
-    .slice(0, 7);
+  const sport = data.bbcSport();
+  const top = (sport && (sport.sport || sport.football)) || [];
+  if (isEmpty(top)) return renderUnavailable(301, 'SPORT HEADLINES');
   g.writeHeaderBand(301, 'SPORT', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'SPORT HEADLINES', SECTION);
   let row = 4;
-  for (const h of headlines) {
+  for (const h of top.slice(0, 6)) {
     if (row > 22) break;
+    const link = h.link ? { l: h.link } : {};
     g.writeRow(row, '*', 'Y', 'K', 1);
-    row = g.writeWrapped(row, 22, h, 'C', 'K', 3);
+    row = g.writeWrapped(row, 22, h.title, 'C', 'K', 3, link);
     row++;
   }
   setFootyFastext(g, 301);
@@ -113,7 +116,6 @@ function renderFootballIndex(g, pageNum) {
     ['WORLD CUP 2026',        305, 'R'],
     ['Premier League scores', 303, 'Y'],
     ['Championship scores',   303, 'Y'],
-    ['Sportsbox',             306, 'Y'],
     ['Football news',         312, 'C'],
     ['Football results',      316, 'C'],
     ['Premier League table',  324, 'W'],
@@ -125,11 +127,15 @@ function renderFootballIndex(g, pageNum) {
     g.writeRow(row, String(page), 'W', 'K', 30);
     row++;
   }
-  row += 1;
-  g.writeRow(row++, 'TOP STORIES', 'Y', 'K', 1);
-  for (const h of data.football().headlines.slice(0, 4)) {
-    if (row > 22) break;
-    row = g.writeWrapped(row, 22, '* ' + h, 'W', 'K', 1);
+  const headlines = bbcFootballHeadlines();
+  if (!isEmpty(headlines)) {
+    row += 1;
+    g.writeRow(row++, 'LATEST', 'Y', 'K', 1);
+    for (const h of headlines.slice(0, 3)) {
+      if (row > 22) break;
+      const link = h.link ? { l: h.link } : {};
+      row = g.writeWrapped(row, 22, '* ' + h.title, 'W', 'K', 1, link);
+    }
   }
   setFootyFastext(g, pageNum);
   g.writeFastextBar();
@@ -137,7 +143,9 @@ function renderFootballIndex(g, pageNum) {
 }
 
 function renderLiveScores(g, subPage) {
-  const fixtures = data.football().premierLeague.fixtures;
+  const pl = data.football();
+  const fixtures = (pl && pl.premierLeague && pl.premierLeague.fixtures) || [];
+  if (isEmpty(fixtures)) return renderUnavailable(303, 'LIVE SCORES', 'NO PREMIER LEAGUE MATCHES SCHEDULED OR DATA NOT YET LOADED');
   const total = Math.max(1, Math.ceil(fixtures.length / PER_FIXTURE_PAGE));
   const sub = Math.min(Math.max(1, subPage), total);
   g.writeHeaderBand(303, 'SCORES', { subPage: sub, totalSubPages: total });
@@ -154,7 +162,7 @@ function renderLiveScores(g, subPage) {
   return g.toJSON({ page: 303, subPage: sub, totalSubPages: total, title: 'LIVE SCORES' });
 }
 
-function renderUnavailable(g, pageNum, title) {
+function renderUnavailableLower(g, pageNum, title) {
   g.writeHeaderBand(pageNum, title, { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, title, SECTION);
   g.writeCentered(10, 'DATA UNAVAILABLE', 'R', 'K');
@@ -166,7 +174,9 @@ function renderUnavailable(g, pageNum, title) {
 }
 
 function renderSportsbox(g) {
-  const fixtures = data.football().premierLeague.fixtures.slice(0, 10);
+  const pl = data.football();
+  const fixtures = ((pl && pl.premierLeague && pl.premierLeague.fixtures) || []).slice(0, 10);
+  if (isEmpty(fixtures)) return renderUnavailable(306, 'SPORTSBOX');
   g.writeHeaderBand(306, 'SPORTSBOX', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'LIVE SCORES', SECTION);
   let row = 4;
@@ -181,22 +191,19 @@ function renderSportsbox(g) {
 }
 
 function renderFootballNews(g) {
-  g.writeHeaderBand(312, 'NEWS', { subPage: 1, totalSubPages: 1 });
+  const headlines = bbcFootballHeadlines();
+  if (isEmpty(headlines)) return renderUnavailable(312, 'FOOTBALL NEWS');
+  g.writeHeaderBand(312, 'FOOTBALL NEWS', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'FOOTBALL NEWS', SECTION);
   let row = 4;
-  for (const h of data.football().headlines) {
-    if (row > 14) break;
-    g.writeRow(row, '*', 'Y', 'K', 1);
-    row = g.writeWrapped(row, 14, h, 'C', 'K', 3);
-    row++;
-  }
-  row = Math.max(row, 15);
-  g.writeRow(row++, 'TOP SCORERS', 'Y', 'K', 1);
-  for (const s of data.football().topScorers.slice(0, 5)) {
+  for (const h of headlines.slice(0, 6)) {
     if (row > 22) break;
-    g.writeRow(row, pad(s.player, 14), 'W', 'K', 3);
-    g.writeRow(row, pad(s.team, 12),   'C', 'K', 18);
-    g.writeRow(row, rpad(s.goals, 2),  'Y', 'K', 36);
+    const link = h.link ? { l: h.link } : {};
+    g.writeRow(row, '*', 'Y', 'K', 1);
+    row = g.writeWrapped(row, 22, h.title, 'C', 'K', 3, link);
+    if (h.summary && row <= 22) {
+      row = g.writeWrapped(row, 22, h.summary, 'W', 'K', 3, link);
+    }
     row++;
   }
   setFootyFastext(g, 312);
@@ -205,9 +212,11 @@ function renderFootballNews(g) {
 }
 
 function renderResults(g, subPage) {
-  const pl = data.football().premierLeague.fixtures;
-  const ch = data.football().championship.fixtures;
+  const f = data.football();
+  const pl = (f && f.premierLeague && f.premierLeague.fixtures) || [];
+  const ch = (f && f.championship && f.championship.fixtures) || [];
   const all = pl.concat(ch);
+  if (isEmpty(all)) return renderUnavailable(316, 'FOOTBALL RESULTS');
   const total = Math.max(1, Math.ceil(all.length / PER_FIXTURE_PAGE));
   const sub = Math.min(Math.max(1, subPage), total);
   g.writeHeaderBand(316, 'RESULTS', { subPage: sub, totalSubPages: total });
@@ -225,9 +234,10 @@ function renderResults(g, subPage) {
 }
 
 function renderTable(g, pageNum, title, table, subPage) {
+  if (isEmpty(table)) return renderUnavailable(pageNum, title);
   const total = Math.max(1, Math.ceil(table.length / TABLE_PER_PAGE));
   const sub = Math.min(Math.max(1, subPage), total);
-  g.writeHeaderBand(pageNum, title, { subPage: sub, totalSubPages: total });
+  g.writeHeaderBand(pageNum, title.slice(0, 12), { subPage: sub, totalSubPages: total });
   g.writeSectionTitle(2, title, SECTION);
   tableHeader(g, 4);
   const slice = table.slice((sub - 1) * TABLE_PER_PAGE, sub * TABLE_PER_PAGE);
@@ -244,16 +254,17 @@ function renderTable(g, pageNum, title, table, subPage) {
 
 function render(pageNum, { subPage = 1 } = {}) {
   const g = new Grid();
+  const f = data.football();
   if (pageNum === 300) return renderSportIndex(g);
   if (pageNum === 301) return renderSportHeadlines(g);
   if (pageNum === 302 || pageNum === 320) return renderFootballIndex(g, pageNum);
   if (pageNum === 303) return renderLiveScores(g, subPage);
-  if (pageNum === 304) return renderUnavailable(g, 304, 'DIVISION TWO');
+  if (pageNum === 304) return renderUnavailableLower(g, 304, 'DIVISION TWO');
   if (pageNum === 306) return renderSportsbox(g);
   if (pageNum === 312) return renderFootballNews(g);
   if (pageNum === 316) return renderResults(g, subPage);
-  if (pageNum === 324) return renderTable(g, 324, 'PREMIER LEAGUE', data.football().premierLeague.table, subPage);
-  if (pageNum === 325) return renderTable(g, 325, 'CHAMPIONSHIP',   data.football().championship.table, subPage);
+  if (pageNum === 324) return renderTable(g, 324, 'PREMIER LEAGUE', (f && f.premierLeague && f.premierLeague.table) || [], subPage);
+  if (pageNum === 325) return renderTable(g, 325, 'CHAMPIONSHIP',   (f && f.championship && f.championship.table) || [], subPage);
   return renderFootballIndex(g, pageNum);
 }
 

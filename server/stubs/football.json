@@ -1,72 +1,7 @@
 {
-  "fetchedAt": "2026-06-13T12:00:00Z",
-  "headlines": [
-    "Arsenal sign Brazilian striker for £62m",
-    "Liverpool boss extends contract to 2029",
-    "England squad announced for Euro qualifier",
-    "Chelsea agree fee for young Dutch defender"
-  ],
-  "premierLeague": {
-    "fixtures": [
-      { "home": "Arsenal",       "away": "Chelsea",         "homeScore": 2, "awayScore": 1, "status": "FT" },
-      { "home": "Liverpool",     "away": "Man United",      "homeScore": 3, "awayScore": 0, "status": "FT" },
-      { "home": "Man City",      "away": "Tottenham",       "homeScore": 4, "awayScore": 2, "status": "FT" },
-      { "home": "Newcastle",     "away": "Aston Villa",     "homeScore": 1, "awayScore": 1, "status": "FT" },
-      { "home": "Brighton",      "away": "West Ham",        "homeScore": 0, "awayScore": 2, "status": "FT" },
-      { "home": "Crystal Palace","away": "Brentford",       "homeScore": 1, "awayScore": 0, "status": "FT" },
-      { "home": "Everton",       "away": "Fulham",          "homeScore": 2, "awayScore": 2, "status": "FT" },
-      { "home": "Bournemouth",   "away": "Wolves",          "homeScore": 0, "awayScore": 1, "status": "FT" },
-      { "home": "Forest",        "away": "Leicester",       "homeScore": 3, "awayScore": 3, "status": "FT" },
-      { "home": "Burnley",       "away": "Sheff Utd",       "homeScore": 2, "awayScore": 0, "status": "FT" }
-    ],
-    "table": [
-      { "pos": 1,  "team": "Man City",    "p": 38, "gd":  65, "pts": 92 },
-      { "pos": 2,  "team": "Arsenal",     "p": 38, "gd":  58, "pts": 88 },
-      { "pos": 3,  "team": "Liverpool",   "p": 38, "gd":  47, "pts": 82 },
-      { "pos": 4,  "team": "Newcastle",   "p": 38, "gd":  31, "pts": 74 },
-      { "pos": 5,  "team": "Man United",  "p": 38, "gd":  22, "pts": 70 },
-      { "pos": 6,  "team": "Tottenham",   "p": 38, "gd":  18, "pts": 68 },
-      { "pos": 7,  "team": "Brighton",    "p": 38, "gd":  10, "pts": 62 },
-      { "pos": 8,  "team": "Aston Villa", "p": 38, "gd":   6, "pts": 60 },
-      { "pos": 9,  "team": "West Ham",    "p": 38, "gd":  -2, "pts": 52 },
-      { "pos": 10, "team": "Chelsea",     "p": 38, "gd":  -3, "pts": 50 },
-      { "pos": 11, "team": "Forest",      "p": 38, "gd":  -8, "pts": 46 },
-      { "pos": 12, "team": "Fulham",      "p": 38, "gd": -10, "pts": 44 },
-      { "pos": 13, "team": "Crystal Pal", "p": 38, "gd": -12, "pts": 42 },
-      { "pos": 14, "team": "Brentford",   "p": 38, "gd": -14, "pts": 40 },
-      { "pos": 15, "team": "Everton",     "p": 38, "gd": -16, "pts": 38 },
-      { "pos": 16, "team": "Wolves",      "p": 38, "gd": -18, "pts": 36 },
-      { "pos": 17, "team": "Bournemouth", "p": 38, "gd": -20, "pts": 34 },
-      { "pos": 18, "team": "Leicester",   "p": 38, "gd": -22, "pts": 30 },
-      { "pos": 19, "team": "Sheff Utd",   "p": 38, "gd": -42, "pts": 22 },
-      { "pos": 20, "team": "Burnley",     "p": 38, "gd": -50, "pts": 18 }
-    ]
-  },
-  "championship": {
-    "fixtures": [
-      { "home": "Leeds",        "away": "Norwich",      "homeScore": 1, "awayScore": 1, "status": "FT" },
-      { "home": "Southampton",  "away": "WBA",          "homeScore": 2, "awayScore": 0, "status": "FT" },
-      { "home": "Watford",      "away": "Hull",         "homeScore": 0, "awayScore": 0, "status": "FT" },
-      { "home": "Cardiff",      "away": "Coventry",     "homeScore": 3, "awayScore": 2, "status": "FT" },
-      { "home": "Sunderland",   "away": "Middlesbro",   "homeScore": 1, "awayScore": 2, "status": "FT" },
-      { "home": "Bristol City", "away": "Swansea",      "homeScore": 1, "awayScore": 1, "status": "FT" },
-      { "home": "Blackburn",    "away": "Preston",      "homeScore": 0, "awayScore": 1, "status": "FT" },
-      { "home": "Plymouth",     "away": "QPR",          "homeScore": 2, "awayScore": 1, "status": "FT" }
-    ],
-    "table": [
-      { "pos": 1, "team": "Leeds",       "p": 46, "gd": 45, "pts": 96 },
-      { "pos": 2, "team": "Southampton", "p": 46, "gd": 40, "pts": 90 },
-      { "pos": 3, "team": "Norwich",     "p": 46, "gd": 28, "pts": 82 },
-      { "pos": 4, "team": "Coventry",    "p": 46, "gd": 22, "pts": 78 },
-      { "pos": 5, "team": "Sunderland",  "p": 46, "gd": 18, "pts": 75 },
-      { "pos": 6, "team": "Middlesbro",  "p": 46, "gd": 14, "pts": 72 }
-    ]
-  },
-  "topScorers": [
-    { "player": "E. Haaland",     "team": "Man City",   "goals": 28 },
-    { "player": "M. Salah",       "team": "Liverpool",  "goals": 22 },
-    { "player": "B. Saka",        "team": "Arsenal",    "goals": 19 },
-    { "player": "H. Kane",        "team": "Tottenham",  "goals": 18 },
-    { "player": "C. Palmer",      "team": "Chelsea",    "goals": 17 }
-  ]
+  "fetchedAt": null,
+  "headlines": [],
+  "premierLeague": { "fixtures": [], "table": [] },
+  "championship":  { "fixtures": [], "table": [] },
+  "topScorers": []
 }

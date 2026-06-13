@@ -2,9 +2,11 @@ const cron = require('node-cron');
 
 const scrapers = [
   require('./news'),
+  require('./sportRss'),
   require('./weather'),
   require('./tv'),
   require('./football'),
+  require('./lottery'),
 ];
 
 async function runOne(scraper) {

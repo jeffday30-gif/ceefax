@@ -45,11 +45,13 @@ server/
     index.js            top-level dispatch by page-number range
   scrapers/           one file per data source
     index.js            registers cron jobs, primes all on startup
-    news.js             BBC RSS - every 15 min
+    news.js             BBC News RSS (UK/World/Business) - every 15 min
+    sportRss.js         BBC Sport RSS (10 sub-feeds incl. world-cup) - every 20 min
     weather.js          Open-Meteo - every 30 min
     tv.js               TVmaze - every 2 hours
-    football.js         football-data.org - every 15 min (needs FOOTBALL_API_KEY)
-  stubs/              hand-crafted fallback data, used when scraper hasn't run
+    football.js         football-data.org - every 15 min (PL/ELC/WC standings, top scorers)
+    lottery.js          national-lottery.co.uk scrape - every hour (currently failing)
+  stubs/              minimal skeleton fallbacks ONLY - no fabricated match data
 scripts/generate-icons.js  pure-JS PNG encoder (no native deps) for PWA icons
 ```
 
@@ -79,10 +81,12 @@ cyan date, yellow clock with `/` between minutes and seconds).
 | Page band | Source | Key needed | Refresh |
 |---|---|---|---|
 | News 101+ | BBC News RSS | no | 15 min |
+| Sport headlines + per-sport (cricket 340, F1 360, rugby 370, golf 380, football 312, WC 329) | BBC Sport RSS sub-feeds | no | 20 min |
 | Weather 400+ | Open-Meteo | no | 30 min |
 | TV 600+ | TVmaze | no | 2 hours |
-| Football 302+, WC 305+ | football-data.org | yes (FOOTBALL_API_KEY) | 15 min |
-| Business indices, Sport (cricket/F1/rugby/golf), Lottery, Travel, Entertainment | none available free | n/a | stub stays |
+| Football tables/fixtures (303, 316, 324, 325), WC standings (326), top scorers (328) | football-data.org | yes (FOOTBALL_API_KEY) | 15 min |
+| Lottery (555) | national-lottery.co.uk scrape (currently broken, JS-rendered) | no | 1 hour |
+| Business indices/shares (220, 230), Travel (430, 450), film reviews (510), music (520), what's on (540) | no free feed available | n/a | "DATA UNAVAILABLE" page |
 
 ## Run locally
 
@@ -126,6 +130,14 @@ the service Live.
    inside each renderer, not a fixed global mapping.
 9. **Entertainment kept at 500s** even though authentic post-1996 had Travel
    in 500s. User explicitly chose this layout.
+10. **No fabricated data anywhere.** Stubs are skeleton-only (structural
+    metadata like tournament name, host countries). Pages with no live feed
+    show `DATA UNAVAILABLE` via `renderers/helpers.js`, NEVER invented match
+    results, scores, or news. The user surfaced fabricated "England beat
+    Senegal in Dallas" data on 2026-06-14 - never let this regress.
+11. **Click-through**: cells can carry `l: url`. Client renders cyan underline
+    and opens the link in a new tab on tap. Use this for BBC article links
+    on news/sport headlines.
 
 ## Standing instructions for Claude (long-running collaboration)
 
@@ -154,6 +166,19 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-06-14: Authenticity pass v2. Stripped all fabricated match data from
+  stubs (worldcup, football, business, sport, entertainment, travel, lottery
+  now all empty skeletons). Added BBC Sport RSS scraper (`sportRss.js`) for
+  per-sport feeds (football/cricket/F1/rugby/golf/tennis/horse-racing). Added
+  click-through: cells can carry a `l: url` attribute that the client
+  underlines in cyan and opens on tap. WC standings now scraped from
+  football-data.org so group tables (326) are live, not invented. Sport
+  pages (301, 340, 360, 370, 380, 312, 329) now show real BBC headlines
+  with article links. Business 201 routes to BBC business news.
+  Renderers with no live data now show a clean "DATA UNAVAILABLE" page via
+  `renderers/helpers.js::renderUnavailable` instead of stub content.
+  Lottery scrape attempted but national-lottery.co.uk is JS-rendered;
+  follow-up needed (Wikipedia or BBC results page).
 - 2026-06-13: CLAUDE.md added for cross-session continuity.
 - 2026-06-13: Deployed to https://ceefax.onrender.com (Render free).
 - 2026-06-13: Phase 6 - wired BBC RSS, Open-Meteo, TVmaze, football-data.org;
