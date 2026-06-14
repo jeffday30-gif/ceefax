@@ -167,6 +167,21 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-06-14: Live scores page 318 + score/url/scorer fixes. New
+  `liveScoresRenderer.js` aggregates in-play matches across every BBC
+  competition bucket and shows scorelines, goal scorers, and BBC live-text
+  links. Fixed three latent bugs surfaced by user: (a) BBC stores
+  `side.score` as a *string* ("0"/"1"), so `scoreOf()` was returning null
+  and every match showed " v " instead of the real scoreline; (b) bbcUrl
+  was a fabricated path - corrected to use `event.onwardJourneyLink` which
+  BBC publishes directly (e.g. `/sport/football/live/c4gy7dxk0xwt`);
+  (c) football-data.org scraper was defaulting unscheduled matches'
+  scores to 0-0; now returns null so fixturesRow renders " v ". Also
+  added goal-scorer extraction from `side.actions[]` (player name + time
+  labels). World Cup match pairs and the live scores page show scorers
+  on a 3rd row in green. bbcLive scraper now also fetches the unscoped
+  `/sport/football/scores-fixtures` page (key `all`) to catch matches
+  outside our three named competitions.
 - 2026-06-14: BBC Sport HTML scraper added (`server/scrapers/bbcLive.js`).
   Pulls live match data from BBC scores-fixtures pages for World Cup,
   Premier League, Championship by extracting `window.__INITIAL_DATA__`

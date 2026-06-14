@@ -10,6 +10,7 @@ const entertainmentRenderer = require('./entertainmentRenderer');
 const tvRenderer = require('./tvRenderer');
 const subtitlesRenderer = require('./subtitlesRenderer');
 const worldCupRenderer = require('./worldCupRenderer');
+const liveScoresRenderer = require('./liveScoresRenderer');
 
 const WC_PAGES = new Set([305, 306, 307, 326, 327, 328, 329]);
 
@@ -30,6 +31,8 @@ function render(pageNum, opts = {}) {
   if (WC_PAGES.has(n)) {
     return worldCupRenderer.render(n, opts);
   }
+
+  if (n === 318) return liveScoresRenderer.render(n, opts);
 
   if ((n >= 300 && n <= 304) || n === 306 || n === 312 || n === 316 ||
       n === 320 || n === 324 || n === 325) {

@@ -16,8 +16,10 @@ function bbcFootballHeadlines() {
 }
 
 function fixturesRow(g, row, fx) {
+  const played = fx.homeScore != null && fx.awayScore != null;
+  const mid = played ? `${fx.homeScore}-${fx.awayScore}` : '  v  ';
   g.writeRow(row, pad(fx.home, 14), 'W', 'K', 0);
-  g.writeRow(row, `${fx.homeScore}-${fx.awayScore}`, 'Y', 'K', 15);
+  g.writeRow(row, mid, played ? 'Y' : 'C', 'K', 15);
   g.writeRow(row, pad(fx.away, 14), 'W', 'K', 21);
   g.writeRow(row, pad(fx.status || '', 5), 'C', 'K', 35);
 }
@@ -66,6 +68,7 @@ function renderSportIndex(g) {
   g.writeHeaderBand(300, 'SPORT', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'BBC SPORT', SECTION);
   const items = [
+    ['LIVE SCORES',       318, 'R'],
     ['Sport headlines',   301, 'Y'],
     ['WORLD CUP 2026',    305, 'R'],
     ['Football',          302, 'G'],
@@ -76,7 +79,6 @@ function renderSportIndex(g) {
     ['Formula One',       360, 'M'],
     ['Rugby Union',       370, 'C'],
     ['Golf',              380, 'W'],
-    ['Horse racing',      660, 'M'],
     ['Sport on TV today', 680, 'C'],
   ];
   let row = 4;

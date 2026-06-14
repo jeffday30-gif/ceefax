@@ -50,14 +50,21 @@ function isYesterday(e) {
   return (e.kickoffISO || '').slice(0, 10) === d.toISOString().slice(0, 10);
 }
 
-// Render one live/upcoming/finished event as two rows: scoreline + venue/group.
+function formatScorers(arr) {
+  if (!Array.isArray(arr) || !arr.length) return '';
+  return arr.map((s) => {
+    const t = (s.times && s.times.length) ? ` ${s.times.join(',')}` : '';
+    return `${s.player}${t}`;
+  }).join(', ');
+}
+
+// Render one live/upcoming/finished event as 2-3 rows: scoreline + venue/group [+ scorers].
 function writeMatchPair(g, row, e) {
   const home = String(e.home || '').slice(0, 11).padEnd(11, ' ');
   const away = String(e.away || '').slice(0, 11).padEnd(11, ' ');
   const link = e.bbcUrl ? { l: e.bbcUrl } : {};
   const isScored = typeof e.homeScore === 'number' && typeof e.awayScore === 'number';
   const middle = isScored ? `${e.homeScore}-${e.awayScore}` : ' v ';
-  // Live state in red, finished/scheduled in white
   const status = e.status || '';
   const statusColour = /^\d+/.test(status) || status === 'LIVE' || status === 'HT' ? 'R'
                      : status === 'FT' ? 'C' : 'W';
@@ -68,6 +75,13 @@ function writeMatchPair(g, row, e) {
   if (e.stage || e.venue) {
     const sub = `${(e.stage || '').replace(/^World - FIFA World Cup - /, '').slice(0, 24)}  ${(e.venue || '').slice(0, 12)}`.trim();
     g.writeRow(row + 1, sub.slice(0, 38), 'C', 'K', 1, link);
+  }
+  // Scorers row if any goals
+  const homeS = formatScorers(e.homeScorers);
+  const awayS = formatScorers(e.awayScorers);
+  if (homeS || awayS) {
+    const line = `${homeS}${homeS && awayS ? ' / ' : ''}${awayS}`.slice(0, 38);
+    g.writeRow(row + 2, line, 'G', 'K', 1, link);
   }
 }
 

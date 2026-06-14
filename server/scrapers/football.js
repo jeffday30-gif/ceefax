@@ -137,13 +137,17 @@ async function fetchCompetition(http, code) {
       .filter((m) => m.status === 'SCHEDULED' || m.status === 'TIMED')
       .sort((a, b) => (a.utcDate || '').localeCompare(b.utcDate || ''))
       .slice(0, 4);
-    fixtures = finished.concat(upcoming).slice(0, 16).map((m) => ({
-      home: shortenTeam(m.homeTeam && (m.homeTeam.shortName || m.homeTeam.name)),
-      away: shortenTeam(m.awayTeam && (m.awayTeam.shortName || m.awayTeam.name)),
-      homeScore: m.score && m.score.fullTime ? (m.score.fullTime.home ?? 0) : 0,
-      awayScore: m.score && m.score.fullTime ? (m.score.fullTime.away ?? 0) : 0,
-      status: statusOf(m),
-    }));
+    fixtures = finished.concat(upcoming).slice(0, 16).map((m) => {
+      const ft = m.score && m.score.fullTime;
+      const played = m.status === 'FINISHED' || m.status === 'IN_PLAY' || m.status === 'PAUSED';
+      return {
+        home: shortenTeam(m.homeTeam && (m.homeTeam.shortName || m.homeTeam.name)),
+        away: shortenTeam(m.awayTeam && (m.awayTeam.shortName || m.awayTeam.name)),
+        homeScore: played && ft && ft.home != null ? ft.home : null,
+        awayScore: played && ft && ft.away != null ? ft.away : null,
+        status: statusOf(m),
+      };
+    });
   } else {
     console.warn(`football: matches ${code} failed:`, matchesRes.reason && matchesRes.reason.message);
   }
@@ -202,14 +206,17 @@ async function fetchWorldCup(http) {
     const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
     const yesterdayResults = matches
       .filter((m) => m.status === 'FINISHED' && m.utcDate && isSameDay(new Date(m.utcDate), yesterday))
-      .map((m) => ({
-        home: shortenTeam(m.homeTeam && m.homeTeam.name),
-        away: shortenTeam(m.awayTeam && m.awayTeam.name),
-        homeScore: m.score && m.score.fullTime ? (m.score.fullTime.home ?? 0) : 0,
-        awayScore: m.score && m.score.fullTime ? (m.score.fullTime.away ?? 0) : 0,
-        stage: stageLabel(m.stage, m.group),
-        venue: m.venue || '',
-      }));
+      .map((m) => {
+        const ft = m.score && m.score.fullTime;
+        return {
+          home: shortenTeam(m.homeTeam && m.homeTeam.name),
+          away: shortenTeam(m.awayTeam && m.awayTeam.name),
+          homeScore: ft && ft.home != null ? ft.home : null,
+          awayScore: ft && ft.away != null ? ft.away : null,
+          stage: stageLabel(m.stage, m.group),
+          venue: m.venue || '',
+        };
+      });
     if (todayMatches.length) result.todayFixtures = todayMatches;
     if (yesterdayResults.length) result.yesterdayResults = yesterdayResults;
   } else {

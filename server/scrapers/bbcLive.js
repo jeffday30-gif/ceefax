@@ -13,6 +13,7 @@ const cache = require('../cache');
 const UA = 'Mozilla/5.0 (compatible; CeefaxReborn/0.1; +https://ceefax.onrender.com)';
 
 const COMPETITIONS = [
+  { key: 'all',          slug: '' },           // all football matches BBC knows about today
   { key: 'worldCup',     slug: 'world-cup' },
   { key: 'premierLeague',slug: 'premier-league' },
   { key: 'championship', slug: 'championship' },
@@ -25,7 +26,8 @@ function isoDate(daysOffset = 0) {
 }
 
 async function fetchPage(slug, start, end) {
-  const url = `https://www.bbc.co.uk/sport/football/${slug}/scores-fixtures` +
+  const path = slug ? `football/${slug}/scores-fixtures` : 'football/scores-fixtures';
+  const url = `https://www.bbc.co.uk/sport/${path}` +
     (start && end ? `?selectedStartDate=${start}&selectedEndDate=${end}` : '');
   const { data } = await axios.get(url, {
     timeout: 12000,
@@ -77,11 +79,30 @@ function statusLabel(event) {
 
 function scoreOf(side) {
   if (!side) return null;
-  // BBC stores score under different keys depending on cache version.
+  // BBC stores score as a string in this payload ("0", "1", etc).
+  if (typeof side.score === 'string' && side.score !== '') {
+    const n = parseInt(side.score, 10);
+    return Number.isFinite(n) ? n : null;
+  }
   if (typeof side.score === 'number') return side.score;
   if (side.score && typeof side.score.value === 'number') return side.score.value;
   if (typeof side.goals === 'number') return side.goals;
   return null;
+}
+
+function scorersOf(side) {
+  if (!side || !Array.isArray(side.actions)) return [];
+  const out = [];
+  for (const a of side.actions) {
+    if (a.actionType !== 'goal') continue;
+    const player = a.playerName || '';
+    const times = (a.actions || [])
+      .filter((x) => x.type === 'Goal' || x.type === 'PenaltyGoal' || x.type === 'OwnGoal')
+      .map((x) => (x.timeLabel && x.timeLabel.value) || '')
+      .filter(Boolean);
+    out.push({ player, times, count: times.length || 1 });
+  }
+  return out;
 }
 
 function teamName(side) {
@@ -100,19 +121,26 @@ function normaliseEvent(event) {
   // Pull the group label out of eventGroupingLabel ("World - FIFA World Cup - Group Stage - Group C") if present.
   const groupMatch = (event.eventGroupingLabel || '').match(/Group [A-Z]$/);
   const stageText = groupMatch ? groupMatch[0] : ((event.stage && event.stage.name) || event.eventGroupingLabel || '');
+  // BBC publishes the live-text URL on `onwardJourneyLink` (e.g. "/sport/football/live/c4gy7dxk0xwt").
+  const bbcUrl = event.onwardJourneyLink
+    ? `https://www.bbc.co.uk${event.onwardJourneyLink}`
+    : null;
   return {
     matchId:    event.id || (event.urn && event.urn.split(':').pop()),
     home:       teamName(event.home),
     away:       teamName(event.away),
     homeScore:  hs == null ? null : hs,
     awayScore:  as == null ? null : as,
+    homeScorers: scorersOf(event.home),
+    awayScorers: scorersOf(event.away),
     status,
     rawStatus:  event.status,
     kickoffISO: event.startDateTime || (event.date && event.date.iso),
     time:       event.time && event.time.displayTimeUK,
     stage:      stageText,
+    competition: (event.tournament && event.tournament.name) || '',
     venue:      event.venue && (event.venue.name || event.venue.shortName) || '',
-    bbcUrl:     event.id ? `https://www.bbc.co.uk/sport/football/live/${event.id.replace(/^s-/, '')}` : null,
+    bbcUrl,
   };
 }
 
@@ -196,8 +224,8 @@ async function run() {
 }
 
 module.exports = {
-  // Every 5 minutes - tight enough for live matches without hammering BBC.
-  schedule: '*/5 * * * *',
+  // Every 2 minutes - fresh enough for "live" without hammering BBC.
+  schedule: '*/2 * * * *',
   run,
   name: 'bbcLive',
 };
