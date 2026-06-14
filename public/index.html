@@ -19,6 +19,12 @@
   <div class="frame">
     <canvas id="screen" width="480" height="500" aria-label="Ceefax page"></canvas>
     <div id="status-line" aria-live="polite"></div>
+    <div id="fastext-row" role="group" aria-label="Fastext buttons">
+      <button class="fkey fkey-red"    data-fastext="red"    type="button"><span class="fkey-label">NEWS</span></button>
+      <button class="fkey fkey-green"  data-fastext="green"  type="button"><span class="fkey-label">SPORT</span></button>
+      <button class="fkey fkey-yellow" data-fastext="yellow" type="button"><span class="fkey-label">WEATHER</span></button>
+      <button class="fkey fkey-cyan"   data-fastext="cyan"   type="button"><span class="fkey-label">TV</span></button>
+    </div>
     <div id="keypad" role="group" aria-label="Page keypad">
       <button class="key" data-digit="1" type="button">1</button>
       <button class="key" data-digit="2" type="button">2</button>

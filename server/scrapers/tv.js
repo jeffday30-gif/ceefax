@@ -50,9 +50,13 @@ async function run() {
     const channelKey = matchChannel(network && network.name);
     if (!channelKey) continue;
     if (!item.airtime) continue;
+    // BBC programmes page is the better landing for users (iPlayer link
+    // on top), TVmaze show page is the fallback.
+    const showUrl = (item.show && (item.show.officialSite || item.show.url)) || null;
     buckets[channelKey].push({
       time: item.airtime,
       title: (item.show && item.show.name) || item.name || '(no title)',
+      url: showUrl,
     });
   }
 

@@ -26,8 +26,10 @@ class Grid {
 
   setFastext(targets) {
     if (Array.isArray(targets) && targets.length === 4) {
-      this.fastext = targets.map((t, i) => ({
-        label: String(t.label || '').slice(0, 8).toUpperCase(),
+      this.fastext = targets.map((t) => ({
+        // Full block on the canvas bar is 10 cols. Pages may use shorter
+        // labels but anything ≤10 chars survives the canvas render intact.
+        label: String(t.label || '').slice(0, 10).toUpperCase(),
         page: Number(t.page) || 100,
       }));
     }

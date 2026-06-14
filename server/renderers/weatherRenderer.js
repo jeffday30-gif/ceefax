@@ -6,6 +6,29 @@ const SECTION = 'B';
 function pad(s, n) { return String(s).padEnd(n, ' ').slice(0, n); }
 function rpad(s, n) { return String(s).padStart(n, ' ').slice(-n); }
 
+// BBC Weather URL = https://www.bbc.co.uk/weather/{geonames-id}. Geoname IDs
+// are stable, BBC has been using them for ~15 years.
+const BBC_WEATHER_ID = {
+  London: 2643743, Manchester: 2643123, Birmingham: 2655603,
+  Leeds: 2644688,  Liverpool: 2644210,  Bristol: 2654675,
+  Newcastle: 2641673, Edinburgh: 2650225, Cardiff: 2653822, Belfast: 2655984,
+  Paris: 2988507, Madrid: 3117735, Rome: 3169070,
+  Berlin: 2950159, 'New York': 5128581, Sydney: 2147714,
+};
+
+function bbcWeatherUrl(name) {
+  const id = BBC_WEATHER_ID[name];
+  return id ? `https://www.bbc.co.uk/weather/${id}` : null;
+}
+
+// BBC regional weather hub URLs.
+const REGION_URL = {
+  england:         'https://www.bbc.co.uk/weather/regions',
+  scotland:        'https://www.bbc.co.uk/weather/regions/scotland',
+  wales:           'https://www.bbc.co.uk/weather/regions/wales',
+  northernIreland: 'https://www.bbc.co.uk/weather/regions/northern-ireland',
+};
+
 const REGIONAL_PAGES = {
   403: { title: 'ENGLAND',          field: 'england' },
   404: { title: 'SCOTLAND',         field: 'scotland' },
@@ -66,13 +89,16 @@ function renderNational(g) {
   g.writeRow(row, 'Wind',    'C', 'K', 33);
   row++;
   for (const c of data.weather().cities) {
-    if (row > 22) break;
-    g.writeRow(row, pad(c.name, 12),               'W', 'K', 2);
-    g.writeRow(row, rpad(`${c.tempC}C`, 5),        'Y', 'K', 15);
-    g.writeRow(row, pad(c.condition, 11),          'C', 'K', 21);
-    g.writeRow(row, pad(c.wind, 8),                'W', 'K', 32);
+    if (row > 21) break;
+    const url = bbcWeatherUrl(c.name);
+    const link = url ? { l: url } : {};
+    g.writeRow(row, pad(c.name, 12),               'W', 'K', 2,  link);
+    g.writeRow(row, rpad(`${c.tempC}C`, 5),        'Y', 'K', 15, link);
+    g.writeRow(row, pad(c.condition, 11),          'C', 'K', 21, link);
+    g.writeRow(row, pad(c.wind, 8),                'W', 'K', 32, link);
     row++;
   }
+  g.writeRow(23, 'TAP A CITY FOR BBC WEATHER FORECAST', 'C', 'K', 0);
   weatherFastext(g, 401);
   g.writeFastextBar();
   return g.toJSON({ page: 401, subPage: 1, totalSubPages: 1, title: 'UK WEATHER' });
@@ -106,7 +132,10 @@ function renderRegional(g, pageNum) {
                   'Outlook unavailable.';
   g.writeHeaderBand(pageNum, meta.title, { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, meta.title, SECTION);
-  g.writeWrapped(4, 14, summary, 'C', 'K', 1);
+  const url = REGION_URL[meta.field];
+  const link = url ? { l: url } : {};
+  g.writeWrapped(4, 14, summary, 'C', 'K', 1, link);
+  if (url) g.writeRow(23, 'TAP FOR FULL BBC REGIONAL FORECAST', 'C', 'K', 0);
   weatherFastext(g, pageNum);
   g.writeFastextBar();
   return g.toJSON({ page: pageNum, subPage: 1, totalSubPages: 1, title: meta.title });
@@ -120,12 +149,15 @@ function renderWorld(g) {
   g.writeRow(4, 'Outlook',   'C', 'K', 28);
   let row = 6;
   for (const w of data.weather().regions.world) {
-    if (row > 22) break;
-    g.writeRow(row, pad(w.city, 14),         'W', 'K', 2);
-    g.writeRow(row, rpad(`${w.tempC}C`, 5),  'Y', 'K', 17);
-    g.writeRow(row, pad(w.condition, 11),    'C', 'K', 28);
+    if (row > 21) break;
+    const url = bbcWeatherUrl(w.city);
+    const link = url ? { l: url } : {};
+    g.writeRow(row, pad(w.city, 14),         'W', 'K', 2,  link);
+    g.writeRow(row, rpad(`${w.tempC}C`, 5),  'Y', 'K', 17, link);
+    g.writeRow(row, pad(w.condition, 11),    'C', 'K', 28, link);
     row++;
   }
+  g.writeRow(23, 'TAP A CITY FOR BBC WEATHER FORECAST', 'C', 'K', 0);
   weatherFastext(g, 410);
   g.writeFastextBar();
   return g.toJSON({ page: 410, subPage: 1, totalSubPages: 1, title: 'WORLD WEATHER' });

@@ -54,6 +54,40 @@ body {
   letter-spacing: 0.2em;
 }
 
+#fastext-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+}
+
+.fkey {
+  appearance: none;
+  background: #000;
+  color: #000;
+  font-family: inherit;
+  font-size: clamp(0.7rem, 2.6vw, 0.95rem);
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  padding: 0.55rem 0.2rem;
+  border: 2px solid;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 2.4rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 80ms linear, transform 80ms linear;
+}
+.fkey:active { transform: scale(0.97); }
+.fkey-label { display: inline-block; }
+.fkey-red    { background: #c00;  border-color: #f55; color: #fff; }
+.fkey-green  { background: #060;  border-color: #5f5; color: #fff; }
+.fkey-yellow { background: #cc0;  border-color: #ff5; color: #000; }
+.fkey-cyan   { background: #066;  border-color: #5ff; color: #fff; }
+.fkey[disabled] { opacity: 0.35; cursor: default; }
+
 #keypad {
   width: 100%;
   display: grid;

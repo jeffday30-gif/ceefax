@@ -7,7 +7,13 @@
   const ROWS = 25;
   const CELL_W = 12;
   const CELL_H = 20;
-  const FASTEXT_PAGES = [101, 301, 400, 601];
+  const FASTEXT_COLOURS = ['red', 'green', 'yellow', 'cyan'];
+  const FALLBACK_FASTEXT = {
+    red:    { label: 'NEWS',    page: 101 },
+    green:  { label: 'SPORT',   page: 301 },
+    yellow: { label: 'WEATHER', page: 400 },
+    cyan:   { label: 'TV',      page: 601 },
+  };
   const TYPING_TIMEOUT_MS = 3000;
   // Authentic Ceefax sub-page cycle was ~10 seconds, not 8.
   const SUBPAGE_CYCLE_MS = 10000;
@@ -19,6 +25,10 @@
   ctx.textBaseline = 'top';
   const statusLine = document.getElementById('status-line');
   const holdBtn = document.getElementById('hold-btn');
+  const fastextRow = document.getElementById('fastext-row');
+  const fastextBtns = Object.fromEntries(
+    FASTEXT_COLOURS.map((c) => [c, fastextRow.querySelector(`[data-fastext="${c}"]`)])
+  );
 
   let current = null;
   let currentSub = 1;
@@ -183,6 +193,7 @@
       currentSub = payload.subPage || sub;
       drawGrid(payload.grid);
       paintHeaderRight();
+      updateFastextButtons();
       if (push) {
         const target = `/?p=${pageNum}${sub > 1 ? `&s=${sub}` : ''}`;
         history.pushState({ pageNum, sub }, '', target);
@@ -195,6 +206,23 @@
     }
   }
 
+  function fastextTarget(colour) {
+    const dyn = current && current.fastext && current.fastext[colour];
+    return (dyn && dyn.page) || FALLBACK_FASTEXT[colour].page;
+  }
+
+  function updateFastextButtons() {
+    const fx = (current && current.fastext) || FALLBACK_FASTEXT;
+    for (const colour of FASTEXT_COLOURS) {
+      const btn = fastextBtns[colour];
+      const entry = fx[colour] || FALLBACK_FASTEXT[colour];
+      const labelEl = btn.querySelector('.fkey-label');
+      labelEl.textContent = (entry && entry.label) ? String(entry.label).toUpperCase() : '';
+      btn.dataset.page = String(entry && entry.page || '');
+      btn.disabled = !(entry && entry.page);
+    }
+  }
+
   function handleCanvasClick(ev) {
     const rect = canvas.getBoundingClientRect();
     const x = (ev.clientX - rect.left) * (canvas.width / rect.width);
@@ -203,7 +231,8 @@
     const row = Math.floor(y / CELL_H);
     if (row === 24) {
       const block = Math.floor(col / 10);
-      const page = FASTEXT_PAGES[block];
+      const colour = FASTEXT_COLOURS[block];
+      const page = fastextTarget(colour);
       if (page) navigate(page);
       return;
     }
@@ -244,10 +273,11 @@
       return;
     }
     if (ev.key === 'h' || ev.key === 'H') { ev.preventDefault(); setHolding(!holding); return; }
-    if (ev.key === 'r' || ev.key === 'R') { ev.preventDefault(); navigate(101); return; }
-    if (ev.key === 'g' || ev.key === 'G') { ev.preventDefault(); navigate(301); return; }
-    if (ev.key === 'y' || ev.key === 'Y') { ev.preventDefault(); navigate(400); return; }
-    if (ev.key === 'b' || ev.key === 'B') { ev.preventDefault(); navigate(601); return; }
+    if (ev.key === 'r' || ev.key === 'R') { ev.preventDefault(); navigate(fastextTarget('red')); return; }
+    if (ev.key === 'g' || ev.key === 'G') { ev.preventDefault(); navigate(fastextTarget('green')); return; }
+    if (ev.key === 'y' || ev.key === 'Y') { ev.preventDefault(); navigate(fastextTarget('yellow')); return; }
+    if (ev.key === 'b' || ev.key === 'B') { ev.preventDefault(); navigate(fastextTarget('cyan')); return; }
+    if (ev.key === 'c' || ev.key === 'C') { ev.preventDefault(); navigate(fastextTarget('cyan')); return; }
   }
 
   function wireKeypad() {
@@ -259,6 +289,13 @@
       if (digit != null) { pushDigit(digit); return; }
       if (action === 'clear') { clearTyping(); return; }
       if (action === 'hold') { setHolding(!holding); return; }
+    });
+    fastextRow.addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button');
+      if (!btn || btn.disabled) return;
+      const colour = btn.dataset.fastext;
+      const page = fastextTarget(colour);
+      if (page) navigate(Number(page));
     });
   }
 

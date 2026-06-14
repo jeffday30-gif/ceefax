@@ -70,12 +70,16 @@ function renderChannel(g, pageNum) {
   g.writeHeaderBand(pageNum, channelName.toUpperCase(), { subPage: sub, totalSubPages: total });
   g.writeSectionTitle(2, `${channelName.toUpperCase()} TODAY`, SECTION);
   let row = 4;
+  let anyLinked = false;
   for (const item of schedule.slice(0, perPage)) {
-    if (row > 22) break;
-    g.writeRow(row, item.time, 'Y', 'K', 2);
-    g.writeRow(row, pad(item.title, 32), 'W', 'K', 8);
+    if (row > 21) break;
+    const link = item.url ? { l: item.url } : {};
+    if (item.url) anyLinked = true;
+    g.writeRow(row, item.time, 'Y', 'K', 2, link);
+    g.writeRow(row, pad(item.title, 32), 'W', 'K', 8, link);
     row++;
   }
+  if (anyLinked) g.writeRow(23, 'TAP A PROGRAMME TO OPEN ON BBC/TVMAZE', 'C', 'K', 0);
   tvFastext(g, pageNum);
   g.writeFastextBar();
   return g.toJSON({ page: pageNum, subPage: sub, totalSubPages: total, title: channelName.toUpperCase() });

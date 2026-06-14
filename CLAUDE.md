@@ -167,6 +167,20 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-06-14: Navigation overhaul. Added 4 coloured fastext buttons
+  (red/green/yellow/cyan) above the digit keypad, mirroring an authentic
+  teletext remote. Labels and target pages update from `payload.fastext`
+  on every navigate, so each page exposes its own contextual destinations
+  on the buttons. Fixed a bug where the canvas row-24 fastext clicks used
+  a hardcoded `[101,301,400,601]` list instead of the dynamic payload -
+  now they read from `current.fastext`. R/G/Y/B/C keyboard shortcuts also
+  use the dynamic targets. Weather pages now link city rows to BBC
+  Weather via stable geonames IDs (London=2643743 etc) and regional
+  pages link to BBC's regional hubs. TV channel pages attach BBC
+  programmes / TVmaze URLs to each schedule row using
+  `show.officialSite || show.url` from the scraper. Fastext labels
+  relaxed from 8 to 10 chars so "WORLD CUP" / "CHANNEL 4" survive.
+  SW VERSION bumped v5 → v6.
 - 2026-06-14: Live scores page 318 + score/url/scorer fixes. New
   `liveScoresRenderer.js` aggregates in-play matches across every BBC
   competition bucket and shows scorelines, goal scorers, and BBC live-text
