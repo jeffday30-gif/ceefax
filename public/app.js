@@ -67,8 +67,31 @@
   }
 
   function drawGrid(grid) {
+    // Two-pass render so double-height characters from row N don't get
+    // overpainted by row N+1's background fill. Pass 1: every cell's
+    // background. Pass 2: characters + underlines.
     for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) drawCell(r, c, grid[r][c]);
+      for (let c = 0; c < COLS; c++) {
+        const cell = grid[r][c];
+        ctx.fillStyle = COLOURS[cell.b] || '#000';
+        ctx.fillRect(c * CELL_W, r * CELL_H, CELL_W, CELL_H);
+      }
+    }
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = grid[r][c];
+        const ch = cell.c;
+        if (ch && ch !== ' ') {
+          ctx.fillStyle = COLOURS[cell.f] || '#fff';
+          const size = cell.d ? CELL_H * 2 : CELL_H;
+          ctx.font = `${size}px "Bedstead", monospace`;
+          ctx.fillText(ch, c * CELL_W, r * CELL_H);
+        }
+        if (cell.l) {
+          ctx.fillStyle = COLOURS.C;
+          ctx.fillRect(c * CELL_W, r * CELL_H + CELL_H - 1, CELL_W, 1);
+        }
+      }
     }
   }
 
@@ -295,20 +318,30 @@
     }
   }
 
-  // Vertical swipe on the canvas = previous/next page number.
-  let touchStartY = null;
+  // Swipe on the canvas:
+  //   vertical    = previous/next page number (current.page +/- 1)
+  //   horizontal  = previous/next sub-page (uses navigateSubPage)
+  // Dominant axis wins.
+  let touchStart = null;
   function onTouchStart(ev) {
     if (ev.touches.length !== 1) return;
-    touchStartY = ev.touches[0].clientY;
+    touchStart = { x: ev.touches[0].clientX, y: ev.touches[0].clientY };
   }
   function onTouchEnd(ev) {
-    if (touchStartY == null) return;
-    const endY = (ev.changedTouches[0] || {}).clientY;
-    const dy = endY - touchStartY;
-    touchStartY = null;
-    if (!current || Math.abs(dy) < SWIPE_THRESHOLD_PX) return;
-    const next = current.page + (dy < 0 ? 1 : -1);
-    if (next >= 100 && next <= 999) navigate(next);
+    if (touchStart == null) return;
+    const end = ev.changedTouches[0] || {};
+    const dx = (end.clientX || 0) - touchStart.x;
+    const dy = (end.clientY || 0) - touchStart.y;
+    touchStart = null;
+    if (!current) return;
+    if (Math.abs(dx) > Math.abs(dy)) {
+      if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return;
+      navigateSubPage(dx < 0 ? 1 : -1);
+    } else {
+      if (Math.abs(dy) < SWIPE_THRESHOLD_PX) return;
+      const next = current.page + (dy < 0 ? 1 : -1);
+      if (next >= 100 && next <= 999) navigate(next);
+    }
   }
 
   function onKeyDown(ev) {
@@ -407,10 +440,31 @@
         console.warn('sw register failed', err);
       });
     });
+    // When a new SW activates, it posts {type:'sw-updated'} - show the
+    // reload banner so the user doesn't have to manually quit/relaunch
+    // the PWA to see new code.
+    navigator.serviceWorker.addEventListener('message', (ev) => {
+      if (ev.data && ev.data.type === 'sw-updated') {
+        const banner = document.getElementById('update-banner');
+        if (banner) banner.hidden = false;
+      }
+    });
+  }
+
+  function showIosInstallHint() {
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone ||
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
+    if (isIOS && !isStandalone && hint) {
+      hint.innerHTML = 'Tap <strong>Share &rarr; Add to Home Screen</strong> for the full TV';
+    }
   }
 
   (async function start() {
     registerServiceWorker();
+    showIosInstallHint();
+    const banner = document.getElementById('update-banner');
+    if (banner) banner.addEventListener('click', () => location.reload());
     await loadFont();
     const { p, s } = readUrl();
     await navigate(p, s, false);

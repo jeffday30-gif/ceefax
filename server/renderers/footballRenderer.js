@@ -66,7 +66,7 @@ function setFootyFastext(g, current) {
 
 function renderSportIndex(g) {
   g.writeHeaderBand(300, 'SPORT', { subPage: 1, totalSubPages: 1 });
-  g.writeSectionTitle(2, 'BBC SPORT', SECTION);
+  g.writeMasthead(2, 'BBC SPORT', SECTION);
   const items = [
     ['LIVE SCORES',       318, 'R'],
     ['Sport headlines',   301, 'Y'],
@@ -81,8 +81,9 @@ function renderSportIndex(g) {
     ['Golf',              380, 'W'],
     ['Sport on TV today', 680, 'C'],
   ];
-  let row = 4;
+  let row = 5;
   for (const [label, page, colour] of items) {
+    if (row > 22) break;
     g.writeRow(row, label, colour, 'K', 3);
     g.writeRow(row, String(page), 'W', 'K', 30);
     row++;

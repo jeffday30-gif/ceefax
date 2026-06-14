@@ -1,4 +1,4 @@
-const VERSION = 'v10';
+const VERSION = 'v11';
 const SHELL_CACHE = `ceefax-shell-${VERSION}`;
 const API_CACHE = `ceefax-api-${VERSION}`;
 
@@ -32,6 +32,11 @@ self.addEventListener('activate', (event) => {
         .map((k) => caches.delete(k))
     );
     await self.clients.claim();
+    // Tell any open windows the worker just rotated so they can offer a
+    // reload. Without this the user has to manually quit + reopen the
+    // PWA to see the new shell.
+    const clients = await self.clients.matchAll({ type: 'window' });
+    for (const client of clients) client.postMessage({ type: 'sw-updated' });
   })());
 });
 

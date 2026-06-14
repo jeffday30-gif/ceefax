@@ -83,10 +83,10 @@ const AZ_ENTRIES = [
 
 function renderHome(g, pageNum, subPage) {
   g.writeHeaderBand(pageNum, 'TELETEXT', { subPage, totalSubPages: 1 });
-  g.writeSectionTitle(2, 'TELETEXT - INDEX', 'R');
-  g.writeCentered(4, 'TELETEXT REBORN', 'C', 'K');
+  g.writeMasthead(2, 'TELETEXT', 'R');
+  g.writeCentered(5, 'TELETEXT REBORN', 'C', 'K');
 
-  let row = 6;
+  let row = 7;
   for (const { label, page, colour } of HOMEPAGE_SECTIONS) {
     if (row > 21) break;
     g.writeRow(row, label, colour, 'K', 3);

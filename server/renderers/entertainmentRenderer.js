@@ -55,25 +55,24 @@ function renderLottery(g) {
   g.writeHeaderBand(555, 'LOTTERY', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'NATIONAL LOTTERY', 'R');
   let row = 4;
-  if (lot.lotto) {
-    g.writeRow(row++, `LOTTO  ${lot.lotto.drawDate || ''}`, 'Y', 'K', 2);
-    g.writeRow(row++, fmtNumbers(lot.lotto.numbers) + `  Bonus ${lot.lotto.bonus}`, 'W', 'K', 4);
+  function writeGame(name, draw, balls, bonusLabel, bonus, jackpot) {
+    g.writeRow(row++, `${name}  ${draw || ''}`, 'Y', 'K', 2);
+    g.writeRow(row++, fmtNumbers(balls) + `  ${bonusLabel} ${bonus}`, 'W', 'K', 4);
+    if (jackpot) g.writeRow(row++, `Next jackpot: ${jackpot}`, 'C', 'K', 4);
     row++;
+  }
+  if (lot.lotto) {
+    writeGame('LOTTO', lot.lotto.drawDate, lot.lotto.numbers, 'Bonus', lot.lotto.bonus, lot.lotto.jackpot);
   }
   if (lot.thunderball) {
-    g.writeRow(row++, `THUNDERBALL  ${lot.thunderball.drawDate || ''}`, 'Y', 'K', 2);
-    g.writeRow(row++, fmtNumbers(lot.thunderball.numbers) + `  TB ${lot.thunderball.thunderball}`, 'W', 'K', 4);
-    row++;
+    writeGame('THUNDERBALL', lot.thunderball.drawDate, lot.thunderball.numbers, 'TB', lot.thunderball.thunderball, lot.thunderball.jackpot);
   }
   if (lot.euromillions) {
-    g.writeRow(row++, `EUROMILLIONS  ${lot.euromillions.drawDate || ''}`, 'Y', 'K', 2);
     const stars = Array.isArray(lot.euromillions.luckyStars) ? lot.euromillions.luckyStars.join(' ') : '';
-    g.writeRow(row++, fmtNumbers(lot.euromillions.numbers) + `  Stars ${stars}`, 'W', 'K', 4);
-    row++;
+    writeGame('EUROMILLIONS', lot.euromillions.drawDate, lot.euromillions.numbers, 'Stars', stars, lot.euromillions.jackpot);
   }
   if (lot.setForLife) {
-    g.writeRow(row++, `SET FOR LIFE  ${lot.setForLife.drawDate || ''}`, 'Y', 'K', 2);
-    g.writeRow(row++, fmtNumbers(lot.setForLife.numbers) + `  LB ${lot.setForLife.lifeBall}`, 'W', 'K', 4);
+    writeGame('SET FOR LIFE', lot.setForLife.drawDate, lot.setForLife.numbers, 'LB', lot.setForLife.lifeBall, lot.setForLife.jackpot);
   }
   entFastext(g, 555);
   g.writeFastextBar();

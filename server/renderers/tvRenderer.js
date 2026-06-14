@@ -38,7 +38,7 @@ function tvFastext(g, current) {
 
 function renderIndex(g) {
   g.writeHeaderBand(600, 'TV', { subPage: 1, totalSubPages: 1 });
-  g.writeSectionTitle(2, 'TV LISTINGS', SECTION);
+  g.writeMasthead(2, 'TV LISTINGS', SECTION);
   const items = [
     ['BBC One today',     601, 'M'],
     ['BBC Two today',     602, 'M'],
@@ -49,7 +49,7 @@ function renderIndex(g) {
     ['Horse racing',      660, 'Y'],
     ['TV highlights',     501, 'W'],
   ];
-  let row = 4;
+  let row = 5;
   for (const [label, page, colour] of items) {
     g.writeRow(row, label, colour, 'K', 3);
     g.writeRow(row, String(page), 'W', 'K', 30);

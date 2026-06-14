@@ -144,6 +144,25 @@ class Grid {
     }
   }
 
+  // Larger 2-row banner with double-height title text - used on section
+  // index pages so they read like the BBC reference screenshots
+  // (e.g. the "BBC FOOTBALL" masthead).
+  writeMasthead(row, title, sectionColour) {
+    const bg = sectionColour;
+    const fg = headerTextColourFor(bg);
+    this.fillRow(row, ' ', fg, bg);
+    this.fillRow(row + 1, ' ', fg, bg);
+    const t = String(title).toUpperCase().slice(0, COLS - 4);
+    const start = Math.max(1, Math.floor((COLS - t.length) / 2));
+    for (let i = 0; i < t.length; i++) {
+      this.set(row, start + i, t[i], fg, bg, { d: 1 });
+    }
+    if (this._totalSubPages && this._totalSubPages > 1) {
+      const indicator = `${this._subPage || 1}/${this._totalSubPages}`.slice(0, 5);
+      this.writeRow(row + 1, indicator, fg, bg, COLS - indicator.length - 1);
+    }
+  }
+
   // Authentic teletext separator: a row of filled block characters in the
   // requested colour, evoking the mosaic block-graphics dividers Ceefax used
   // instead of horizontal rules.

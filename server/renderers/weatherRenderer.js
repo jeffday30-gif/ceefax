@@ -53,7 +53,7 @@ function weatherFastext(g, current) {
 
 function renderIndex(g) {
   g.writeHeaderBand(400, 'WEATHER', { subPage: 1, totalSubPages: 1 });
-  g.writeSectionTitle(2, 'BBC WEATHER', SECTION);
+  g.writeMasthead(2, 'BBC WEATHER', SECTION);
   const items = [
     ['UK national forecast', 401, 'C'],
     ['5-day UK forecast',    402, 'C'],
@@ -64,7 +64,7 @@ function renderIndex(g) {
     ['World weather',        410, 'M'],
     ['Travel news',          430, 'G'],
   ];
-  let row = 4;
+  let row = 5;
   for (const [label, page, colour] of items) {
     g.writeRow(row, label, colour, 'K', 3);
     g.writeRow(row, String(page), 'W', 'K', 30);
