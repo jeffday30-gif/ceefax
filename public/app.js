@@ -311,6 +311,15 @@
       const page = fastextTarget(colour);
       if (page) navigate(Number(page));
     });
+    const navRow = document.getElementById('nav-row');
+    if (navRow) {
+      navRow.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button');
+        if (!btn) return;
+        const target = Number(btn.dataset.nav);
+        if (target) navigate(target);
+      });
+    }
   }
 
   function readUrl() {

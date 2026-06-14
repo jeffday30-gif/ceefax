@@ -15,6 +15,13 @@ html, body {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   -webkit-user-select: none;
+  /* Block double-tap zoom on every interactive surface but keep pinch
+     zoom working (accessibility). The buttons set this individually too;
+     html-level rule catches stray fast double-taps anywhere. */
+  touch-action: manipulation;
+  /* iOS Safari sometimes zooms text on tap if computed font-size < 16px
+     - 16px baseline here keeps it pinned. */
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -23,8 +30,7 @@ body {
   align-items: center;
   justify-content: flex-start;
   padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-  background:
-    radial-gradient(ellipse at center top, #1a1a1a 0%, #050505 80%);
+  background: radial-gradient(ellipse at center top, #1a1a1a 0%, #050505 80%);
 }
 
 .frame {
@@ -37,35 +43,40 @@ body {
   padding: 0.5rem;
 }
 
-/* ---- CRT television bezel ---- */
+/* ---- CRT television in a grey 90s portable shell ---- */
 .tv {
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  background: linear-gradient(180deg, #4a463f 0%, #2b2925 55%, #1a1816 100%);
-  padding: 0.7rem 0.7rem 0.4rem 0.7rem;
-  border-radius: 14px;
+  background: linear-gradient(180deg, #b8b8b8 0%, #888a8c 50%, #5a5c5e 100%);
+  padding: 0.8rem 0.8rem 0.5rem 0.8rem;
+  border-radius: 16px;
   box-shadow:
-    0 6px 14px rgba(0,0,0,0.6),
-    inset 0 1px 0 rgba(255,255,255,0.08),
-    inset 0 -2px 6px rgba(0,0,0,0.5);
+    0 6px 14px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.4),
+    inset 0 -3px 8px rgba(0,0,0,0.35);
 }
 .tv-bezel {
-  background: #0a0a0a;
-  border-radius: 22px / 18px;
-  padding: 0.45rem;
+  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+  /* Mild rounding so the bezel reads as a CRT without clipping the
+     teletext content. Inner padding gives the canvas breathing room
+     so corner cells (page number, fastext block) sit clear of the
+     curved corner. */
+  border-radius: 10px;
+  padding: 0.55rem;
   box-shadow:
-    inset 0 0 0 2px #2a2a2a,
+    inset 0 0 0 2px #0a0a0a,
     inset 0 0 14px rgba(0,0,0,0.9),
-    0 1px 0 rgba(255,255,255,0.04);
+    0 1px 0 rgba(255,255,255,0.05);
 }
 .tv-screen {
-  border-radius: 14px / 11px;
-  overflow: hidden;
+  /* No border-radius here - the inner bezel already rounds the visible
+     frame, and a second clip on the canvas was cropping corner text. */
   background: #000;
+  overflow: hidden;
   box-shadow:
-    inset 0 0 24px rgba(0,255,180,0.06),
+    inset 0 0 24px rgba(120,255,200,0.05),
     inset 0 0 60px rgba(0,0,0,0.7);
 }
 #screen {
@@ -76,16 +87,16 @@ body {
   image-rendering: crisp-edges;
   background: #000;
   touch-action: none;
-  /* Faint phosphor glow */
   filter: contrast(1.05) saturate(1.05);
 }
 .tv-brand {
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
   text-align: center;
-  font-size: 0.65rem;
-  letter-spacing: 0.35em;
-  color: #888;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+  font-size: 0.7rem;
+  letter-spacing: 0.4em;
+  color: #2a2a2a;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+  font-weight: bold;
 }
 
 #status-line {
@@ -107,7 +118,7 @@ body {
 /* ---- Remote-control surround ---- */
 .remote {
   width: 100%;
-  background: linear-gradient(180deg, #3a3a3a 0%, #1c1c1c 100%);
+  background: linear-gradient(180deg, #6a6a6a 0%, #3a3a3a 100%);
   border-radius: 16px;
   padding: 0.55rem;
   display: flex;
@@ -115,8 +126,8 @@ body {
   gap: 0.45rem;
   box-shadow:
     0 4px 10px rgba(0,0,0,0.5),
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    inset 0 -2px 4px rgba(0,0,0,0.6);
+    inset 0 1px 0 rgba(255,255,255,0.2),
+    inset 0 -2px 4px rgba(0,0,0,0.5);
 }
 
 #fastext-row {
@@ -124,6 +135,13 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 0.3rem;
+}
+
+.fkey, .key, .navkey {
+  /* The single biggest fix for the iPhone "control button zoomed me in"
+     report - manipulation lets pinch and scroll through but disables
+     the double-tap-zoom gesture on buttons. */
+  touch-action: manipulation;
 }
 
 .fkey {
@@ -173,12 +191,12 @@ body {
   font-family: inherit;
   font-size: clamp(1.15rem, 4.8vw, 1.7rem);
   padding: 0.65rem 0;
-  border: 1px solid #444;
+  border: 1px solid #555;
   border-radius: 12px;
   cursor: pointer;
   letter-spacing: 0.08em;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.15),
     inset 0 -2px 4px rgba(0,0,0,0.6),
     0 1px 2px rgba(0,0,0,0.5);
   transition: transform 80ms linear, box-shadow 80ms linear;
@@ -198,4 +216,35 @@ body {
   background: linear-gradient(180deg, #ff0 0%, #aa0 100%);
   color: #000;
   border-color: #ff0;
+}
+
+/* ---- Quick-nav row (HOME / INDEX / ABOUT) ---- */
+#nav-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+.navkey {
+  appearance: none;
+  background: linear-gradient(180deg, #1c1c1c 0%, #0a0a0a 100%);
+  color: #cfd6e2;
+  font-family: inherit;
+  font-size: clamp(0.7rem, 2.7vw, 0.95rem);
+  font-weight: bold;
+  letter-spacing: 0.18em;
+  padding: 0.55rem 0;
+  border: 1px solid #2a3340;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    inset 0 -2px 4px rgba(0,0,0,0.6),
+    0 1px 2px rgba(0,0,0,0.5);
+  transition: transform 80ms linear, box-shadow 80ms linear;
+}
+.navkey:active {
+  transform: translateY(1px);
+  background: #050505;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.7);
 }

@@ -167,6 +167,18 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-06-14: UX polish from iPhone testing. (a) Grey "90s portable TV"
+  shell - the previous brown-grey bezel was too dark; user wanted retro
+  grey, now `linear-gradient(180deg, #b8b8b8, #888a8c, #5a5c5e)` with
+  light highlights and a dark inner CRT cavity. (b) Removed the inner
+  border-radius that was clipping corner text (page number, fastext
+  block). Inner bezel padding gives the canvas breathing room. (c)
+  Double-tap zoom on the controls fixed via `touch-action: manipulation`
+  globally and on every button. Viewport now allows up to 2x pinch but
+  defaults to 1x, so a fast double-tap on CLR/HOLD no longer accidentally
+  zooms the page. (d) New HOME / INDEX / ABOUT quick-nav row below the
+  digit keypad, dark slate styling so it reads as utility (vs the bright
+  fastext row). Wired in `app.js` via `[data-nav]`. SW VERSION v7 → v8.
 - 2026-06-14: Rebrand + CRT-bezel + remote-style keypad + lottery fix
   + keep-alive ping. Product renamed CEEFAX → "Teletext Reborn" across
   the canvas header (row 0 reads `P303 TELETEXT ... clock`), manifest,
