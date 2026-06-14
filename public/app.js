@@ -184,6 +184,9 @@
   }
 
   async function navigate(pageNum, sub = 1, push = true) {
+    // Show a loading state immediately so the user gets feedback - matters
+    // most on Render free's ~30s cold start.
+    setLoading(`PLEASE WAIT P${pageNum}`);
     try {
       const url = `/api/page/${pageNum}${sub > 1 ? `?sub=${sub}` : ''}`;
       const res = await fetch(url);
@@ -194,16 +197,27 @@
       drawGrid(payload.grid);
       paintHeaderRight();
       updateFastextButtons();
+      clearLoading();
       if (push) {
         const target = `/?p=${pageNum}${sub > 1 ? `&s=${sub}` : ''}`;
         history.pushState({ pageNum, sub }, '', target);
       }
-      document.title = `P${pageNum} ${payload.title || 'CEEFAX'}`;
+      document.title = `P${pageNum} ${payload.title || 'TELETEXT'}`;
       startSubCycle();
     } catch (err) {
       console.error('navigate failed', err);
+      clearLoading();
       setStatus('FETCH FAILED');
     }
+  }
+
+  function setLoading(msg) {
+    statusLine.classList.add('loading');
+    statusLine.textContent = msg;
+  }
+  function clearLoading() {
+    statusLine.classList.remove('loading');
+    statusLine.textContent = '';
   }
 
   function fastextTarget(colour) {

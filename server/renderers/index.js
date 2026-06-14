@@ -11,6 +11,7 @@ const tvRenderer = require('./tvRenderer');
 const subtitlesRenderer = require('./subtitlesRenderer');
 const worldCupRenderer = require('./worldCupRenderer');
 const liveScoresRenderer = require('./liveScoresRenderer');
+const aboutRenderer = require('./aboutRenderer');
 
 const WC_PAGES = new Set([305, 306, 307, 326, 327, 328, 329]);
 
@@ -19,6 +20,7 @@ function render(pageNum, opts = {}) {
   if (!Number.isInteger(n) || n < 100 || n > 999) return renderNotFound(pageNum);
 
   if (n === 100 || n === 199 || n === 152) return indexRenderer.render(n, opts);
+  if (n === 198) return aboutRenderer.render(n, opts);
 
   if ((n >= 101 && n <= 119) || n === 150 || n === 160 || n === 170) {
     return newsRenderer.render(n, opts);
@@ -68,22 +70,22 @@ function render(pageNum, opts = {}) {
 
 function renderUnderConstruction(pageNum, { subPage = 1 } = {}) {
   const g = new Grid();
-  g.writeHeaderBand(pageNum, 'CEEFAX', { subPage, totalSubPages: 1 });
+  g.writeHeaderBand(pageNum, 'TELETEXT', { subPage, totalSubPages: 1 });
   g.writeSectionTitle(2, 'PAGE NOT YET AVAILABLE', 'R');
   g.writeCentered(10, `P${pageNum} is not in use.`, 'W', 'K');
   g.writeCentered(12, 'Try 100 for the index or 199 for A-Z.', 'C', 'K');
   g.writeFastextBar();
-  return g.toJSON({ page: pageNum, subPage, totalSubPages: 1, title: 'CEEFAX' });
+  return g.toJSON({ page: pageNum, subPage, totalSubPages: 1, title: 'TELETEXT' });
 }
 
 function renderNotFound(raw) {
   const g = new Grid();
-  g.writeHeaderBand(100, 'CEEFAX', { subPage: 1, totalSubPages: 1 });
+  g.writeHeaderBand(100, 'TELETEXT', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'PAGE NOT FOUND', 'R');
   g.writeCentered(10, `"${String(raw).slice(0, 20)}" is not a valid page`, 'W', 'K');
   g.writeCentered(12, 'Pages are 100 to 999.', 'C', 'K');
   g.writeFastextBar();
-  return g.toJSON({ page: 100, subPage: 1, totalSubPages: 1, title: 'CEEFAX' });
+  return g.toJSON({ page: 100, subPage: 1, totalSubPages: 1, title: 'TELETEXT' });
 }
 
 module.exports = { render };

@@ -1,7 +1,7 @@
 {
-  "name": "CEEFAX",
-  "short_name": "CEEFAX",
-  "description": "A faithful BBC Ceefax recreation.",
+  "name": "Teletext Reborn",
+  "short_name": "Teletext",
+  "description": "An affectionate fan tribute to BBC Ceefax (1974-2012).",
   "start_url": "/?p=100",
   "scope": "/",
   "display": "standalone",

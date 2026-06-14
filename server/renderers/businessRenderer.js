@@ -7,7 +7,7 @@ const SECTION = 'C';
 function bizFastext(g, current) {
   const map = {
     200: [{ label: 'BIZ NEWS', page: 201 }, { label: 'NEWS',    page: 101 }, { label: 'SPORT',   page: 301 }, { label: 'INDEX', page: 100 }],
-    201: [{ label: 'INDEX',    page: 200 }, { label: 'NEWS',    page: 101 }, { label: 'SPORT',   page: 301 }, { label: 'CEEFAX',page: 100 }],
+    201: [{ label: 'INDEX',    page: 200 }, { label: 'NEWS',    page: 101 }, { label: 'SPORT',   page: 301 }, { label: 'TELETEXT', page: 100 }],
   };
   g.setFastext(map[current] || [
     { label: 'NEWS',     page: 101 },

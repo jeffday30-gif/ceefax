@@ -6,9 +6,9 @@
   <meta name="theme-color" content="#000000">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="CEEFAX">
+  <meta name="apple-mobile-web-app-title" content="Teletext">
   <meta name="mobile-web-app-capable" content="yes">
-  <title>CEEFAX</title>
+  <title>Teletext Reborn</title>
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="icon" type="image/svg+xml" href="/icons/icon.svg">
@@ -17,27 +17,36 @@
 </head>
 <body>
   <div class="frame">
-    <canvas id="screen" width="480" height="500" aria-label="Ceefax page"></canvas>
-    <div id="status-line" aria-live="polite"></div>
-    <div id="fastext-row" role="group" aria-label="Fastext buttons">
-      <button class="fkey fkey-red"    data-fastext="red"    type="button"><span class="fkey-label">NEWS</span></button>
-      <button class="fkey fkey-green"  data-fastext="green"  type="button"><span class="fkey-label">SPORT</span></button>
-      <button class="fkey fkey-yellow" data-fastext="yellow" type="button"><span class="fkey-label">WEATHER</span></button>
-      <button class="fkey fkey-cyan"   data-fastext="cyan"   type="button"><span class="fkey-label">TV</span></button>
+    <div class="tv">
+      <div class="tv-bezel">
+        <div class="tv-screen">
+          <canvas id="screen" width="480" height="500" aria-label="Teletext page"></canvas>
+        </div>
+      </div>
+      <div class="tv-brand">TELETEXT REBORN</div>
     </div>
-    <div id="keypad" role="group" aria-label="Page keypad">
-      <button class="key" data-digit="1" type="button">1</button>
-      <button class="key" data-digit="2" type="button">2</button>
-      <button class="key" data-digit="3" type="button">3</button>
-      <button class="key" data-digit="4" type="button">4</button>
-      <button class="key" data-digit="5" type="button">5</button>
-      <button class="key" data-digit="6" type="button">6</button>
-      <button class="key" data-digit="7" type="button">7</button>
-      <button class="key" data-digit="8" type="button">8</button>
-      <button class="key" data-digit="9" type="button">9</button>
-      <button class="key key-fn" data-action="clear" type="button">CLR</button>
-      <button class="key" data-digit="0" type="button">0</button>
-      <button class="key key-fn" data-action="hold" id="hold-btn" type="button">HOLD</button>
+    <div id="status-line" aria-live="polite"></div>
+    <div class="remote">
+      <div id="fastext-row" role="group" aria-label="Fastext buttons">
+        <button class="fkey fkey-red"    data-fastext="red"    type="button"><span class="fkey-label">NEWS</span></button>
+        <button class="fkey fkey-green"  data-fastext="green"  type="button"><span class="fkey-label">SPORT</span></button>
+        <button class="fkey fkey-yellow" data-fastext="yellow" type="button"><span class="fkey-label">WEATHER</span></button>
+        <button class="fkey fkey-cyan"   data-fastext="cyan"   type="button"><span class="fkey-label">TV</span></button>
+      </div>
+      <div id="keypad" role="group" aria-label="Page keypad">
+        <button class="key" data-digit="1" type="button">1</button>
+        <button class="key" data-digit="2" type="button">2</button>
+        <button class="key" data-digit="3" type="button">3</button>
+        <button class="key" data-digit="4" type="button">4</button>
+        <button class="key" data-digit="5" type="button">5</button>
+        <button class="key" data-digit="6" type="button">6</button>
+        <button class="key" data-digit="7" type="button">7</button>
+        <button class="key" data-digit="8" type="button">8</button>
+        <button class="key" data-digit="9" type="button">9</button>
+        <button class="key key-fn" data-action="clear" type="button">CLR</button>
+        <button class="key" data-digit="0" type="button">0</button>
+        <button class="key key-fn" data-action="hold" id="hold-btn" type="button">HOLD</button>
+      </div>
     </div>
   </div>
   <script src="/app.js"></script>

@@ -20,6 +20,7 @@ const HOMEPAGE_SECTIONS = [
 ];
 
 const AZ_ENTRIES = [
+  ['About',            198],
   ['Airports',         450],
   ['Argentina at WC',  326],
   ['Athletics',        390],
@@ -81,17 +82,19 @@ const AZ_ENTRIES = [
 ];
 
 function renderHome(g, pageNum, subPage) {
-  g.writeHeaderBand(pageNum, 'CEEFAX', { subPage, totalSubPages: 1 });
-  g.writeSectionTitle(2, 'CEEFAX - INDEX', 'R');
-  g.writeCentered(4, 'BBC TELETEXT REBORN', 'C', 'K');
+  g.writeHeaderBand(pageNum, 'TELETEXT', { subPage, totalSubPages: 1 });
+  g.writeSectionTitle(2, 'TELETEXT - INDEX', 'R');
+  g.writeCentered(4, 'TELETEXT REBORN', 'C', 'K');
 
   let row = 6;
   for (const { label, page, colour } of HOMEPAGE_SECTIONS) {
-    if (row > 22) break;
+    if (row > 21) break;
     g.writeRow(row, label, colour, 'K', 3);
     g.writeRow(row, String(page), 'W', 'K', 30);
     row++;
   }
+  g.writeRow(22, 'About', 'W', 'K', 3);
+  g.writeRow(22, '198',   'W', 'K', 30);
   g.setFastext([
     { label: 'HEADLINE', page: 101 },
     { label: 'FOOTBALL', page: 302 },
@@ -99,7 +102,7 @@ function renderHome(g, pageNum, subPage) {
     { label: 'A-Z',      page: 199 },
   ]);
   g.writeFastextBar();
-  return g.toJSON({ page: pageNum, subPage, totalSubPages: 1, title: 'CEEFAX' });
+  return g.toJSON({ page: pageNum, subPage, totalSubPages: 1, title: 'TELETEXT' });
 }
 
 function renderAZ(g, pageNum, subPage) {
@@ -131,27 +134,27 @@ function renderAZ(g, pageNum, subPage) {
 
 function renderPagesFromCeefax(g) {
   g.writeHeaderBand(152, 'PAGES', { subPage: 1, totalSubPages: 1 });
-  g.writeSectionTitle(2, 'PAGES FROM CEEFAX', 'M');
+  g.writeSectionTitle(2, 'PAGES FROM THE PAST', 'M');
   g.writeWrapped(5, 9,
-    "Pages from Ceefax was the in-vision rolling caption " +
-    "slot broadcast on BBC One and BBC Two in the small hours " +
-    "of the morning.",
+    "BBC Ceefax (1974-2012) was the United Kingdom's " +
+    "teletext service - 24 hours of rolling news, sport " +
+    "and weather delivered as text-only pages.",
     'W', 'K', 1);
   g.writeWrapped(11, 15,
-    "Set to a soundtrack of light orchestral music, it cycled " +
-    "through that night's top stories and remained one of the " +
-    "BBC's most-broadcast programmes ever.",
+    "This is an affectionate fan tribute. We are not " +
+    "affiliated with the BBC and 'Ceefax' remains a " +
+    "BBC trademark.",
     'C', 'K', 1);
-  g.writeCentered(17, "1980 - 2012", 'Y', 'K');
+  g.writeCentered(17, "1974 - 2012", 'Y', 'K');
   g.writeCentered(19, "Press 100 to return to the index", 'W', 'K');
   g.setFastext([
     { label: 'INDEX',    page: 100 },
     { label: 'A-Z',      page: 199 },
-    { label: 'HEADLINE', page: 101 },
+    { label: 'ABOUT',    page: 198 },
     { label: 'SUBTITLE', page: 888 },
   ]);
   g.writeFastextBar();
-  return g.toJSON({ page: 152, subPage: 1, totalSubPages: 1, title: 'PAGES FROM CEEFAX' });
+  return g.toJSON({ page: 152, subPage: 1, totalSubPages: 1, title: 'PAGES FROM THE PAST' });
 }
 
 function render(pageNum, { subPage = 1 } = {}) {

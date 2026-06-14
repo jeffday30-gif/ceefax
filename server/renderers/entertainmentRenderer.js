@@ -14,7 +14,7 @@ function entFastext(g, current) {
     { label: 'INDEX',    page: 500 },
     { label: 'TV LIST',  page: 600 },
     { label: 'NEWS',     page: 101 },
-    { label: 'CEEFAX',   page: 100 },
+    { label: 'TELETEXT', page: 100 },
   ]);
 }
 

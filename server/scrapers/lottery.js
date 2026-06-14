@@ -1,59 +1,70 @@
-// National Lottery results scraper. No public API exists, but the official
-// results pages render the numbers in server-side HTML that we can extract
-// with simple regexes. We pull Lotto, Thunderball, EuroMillions and Set For
-// Life. Updated once per hour - draw days are Wed/Sat (Lotto), Tue/Fri
-// (EuroMillions), Tue/Wed/Fri/Sat (Thunderball), Mon/Thu (Set For Life).
+// UK National Lottery results scraper. Uses lottery.co.uk because it is
+// fully server-rendered (national-lottery.co.uk is a React SPA and returns
+// an empty shell to a curl-style fetch). Updated hourly - draw days are
+// Wed/Sat (Lotto), Tue/Fri (EuroMillions), Tue/Wed/Fri/Sat (Thunderball),
+// Mon/Thu (Set For Life).
 
 const axios = require('axios');
 const cache = require('../cache');
 
-const UA = 'Mozilla/5.0 (compatible; CeefaxReborn/0.1; +https://ceefax.onrender.com)';
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
+           'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
 
 async function fetchHtml(url) {
   const { data } = await axios.get(url, {
-    timeout: 10000,
-    headers: { 'User-Agent': UA, 'Accept': 'text/html' },
+    timeout: 12000,
+    headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
   });
   return data;
 }
 
-// Extract the first occurrence of N ball numbers and a bonus from a chunk of
-// HTML. The results pages render balls inside class="game-icon-NN" or as
-// "<li>NN</li>". We use a broad regex and post-filter.
-function extractBalls(html, count) {
-  const matches = Array.from(html.matchAll(/>(\d{1,2})</g));
-  const candidates = matches.map((m) => Number(m[1])).filter((n) => n >= 1 && n <= 70);
-  if (candidates.length < count) return null;
-  return candidates.slice(0, count);
+// lottery.co.uk AMP results wraps each ball as
+//   <div class="result medium {game}-ball-..."]>NN</div>
+// followed by a single bonus div with class containing "bonus-ball".
+// We grab the first block (the latest draw), main balls + bonus.
+function extractFirstBlock(html, count) {
+  const re = /<div[^>]*class="[^"]*\bresult\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\/div>/gi;
+  const nums = [];
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    nums.push(Number(m[1]));
+    if (nums.length >= count) break;
+  }
+  return nums.length >= count ? nums : null;
 }
 
 function extractDate(html) {
-  const m = html.match(/(Sat|Sun|Mon|Tue|Wed|Thu|Fri)\s+\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{4}/);
-  return m ? m[0] : null;
+  // The AMP page formats it as "Saturday<span>13th June 2026</span>".
+  const m = html.match(/(Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday)[^<]*<[^>]*>\s*(\d{1,2})(?:st|nd|rd|th)?\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
+  if (!m) return null;
+  return `${m[1]} ${m[2]} ${m[3]} ${m[4]}`;
 }
 
-async function scrapeGame(url, ballCount, bonusCount = 1) {
+async function scrapeGame(label, url, ballCount, bonusCount) {
   try {
     const html = await fetchHtml(url);
-    const balls = extractBalls(html, ballCount + bonusCount);
-    if (!balls) return null;
+    const balls = extractFirstBlock(html, ballCount + bonusCount);
+    if (!balls) {
+      console.warn(`lottery: ${label} parse failed (no balls found)`);
+      return null;
+    }
     return {
       drawDate: extractDate(html),
-      numbers: balls.slice(0, ballCount),
-      bonus:   bonusCount === 1 ? balls[ballCount] : balls.slice(ballCount, ballCount + bonusCount),
+      numbers:  balls.slice(0, ballCount),
+      bonus:    bonusCount === 1 ? balls[ballCount] : balls.slice(ballCount, ballCount + bonusCount),
     };
   } catch (err) {
-    console.warn(`lottery: ${url} failed:`, err.message);
+    console.warn(`lottery: ${label} fetch failed:`, err.message);
     return null;
   }
 }
 
 async function run() {
   const [lotto, thunderball, euromillions, setForLife] = await Promise.all([
-    scrapeGame('https://www.national-lottery.co.uk/results/lotto/draw-history', 6, 1),
-    scrapeGame('https://www.national-lottery.co.uk/results/thunderball/draw-history', 5, 1),
-    scrapeGame('https://www.national-lottery.co.uk/results/euromillions/draw-history', 5, 2),
-    scrapeGame('https://www.national-lottery.co.uk/results/set-for-life/draw-history', 5, 1),
+    scrapeGame('lotto',        'https://www.lottery.co.uk/amp/lotto/results',        6, 1),
+    scrapeGame('thunderball',  'https://www.lottery.co.uk/amp/thunderball/results',  5, 1),
+    scrapeGame('euromillions', 'https://www.lottery.co.uk/amp/euromillions/results', 5, 2),
+    scrapeGame('set-for-life', 'https://www.lottery.co.uk/amp/set-for-life/results', 5, 1),
   ]);
 
   const got = [lotto, thunderball, euromillions, setForLife].filter(Boolean).length;

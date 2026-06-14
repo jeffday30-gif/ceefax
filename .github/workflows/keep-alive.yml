@@ -1,0 +1,32 @@
+name: Keep alive
+
+# Pings the Render free instance every 14 minutes so it doesn't sleep
+# during waking hours. Render free sleeps after 15 min of inactivity and
+# cold-starts in ~30 s, which the user notices.
+#
+# Schedule windows are roughly 06:00-23:00 UK time (05:00-22:00 UTC),
+# 7 days a week. No need to ping overnight.
+
+on:
+  schedule:
+    - cron: '*/14 5-22 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Hit /healthz
+        run: |
+          for i in 1 2 3; do
+            if curl -fsSL --max-time 45 https://ceefax.onrender.com/healthz; then
+              echo
+              echo "ok"
+              exit 0
+            fi
+            echo "attempt $i failed, retrying..."
+            sleep 5
+          done
+          echo "all 3 attempts failed"
+          exit 1

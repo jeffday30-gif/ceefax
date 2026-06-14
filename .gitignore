@@ -5,3 +5,5 @@ data/
 .DS_Store
 .claude/
 /tmp/
+# Reference screenshots provided by the user in chat - kept locally
+/c*.png

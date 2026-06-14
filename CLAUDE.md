@@ -167,6 +167,27 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-06-14: Rebrand + CRT-bezel + remote-style keypad + lottery fix
+  + keep-alive ping. Product renamed CEEFAX → "Teletext Reborn" across
+  the canvas header (row 0 reads `P303 TELETEXT ... clock`), manifest,
+  page titles, and in-canvas fastext labels. New About page (P198) with
+  contact email, source link, BBC trademark disclaimer; linked from the
+  home page and added to the A-Z index. Sub-page indicator (1/N) moved
+  from row 0 to the right edge of the section title bar via the new
+  `writeSectionTitle` auto-pickup of `_subPage`/`_totalSubPages` stashed
+  by `writeHeaderBand` - avoids the row-0 collision with the clock and
+  matches the c2.png reference. Visual chrome: CSS-only CRT TV bezel
+  wraps the canvas (curved corners, inset shadow, faint phosphor glow,
+  small "TELETEXT REBORN" brand strip below); keypad and fastext live
+  inside a "remote control" plastic surround with gradient buttons.
+  Loading state: `setLoading` blinks "PLEASE WAIT P303" in the status
+  line during fetch - matters most on Render free's cold start.
+  Lottery scraper rewritten to scrape lottery.co.uk's `/amp/{game}/results`
+  endpoints (server-rendered, parseable). All four games (Lotto,
+  Thunderball, EuroMillions, Set For Life) now return real data. Keep-
+  alive cron: `.github/workflows/keep-alive.yml` pings /healthz every
+  14 min between 05:00-22:00 UTC so the Render instance doesn't sleep
+  during waking hours. SW VERSION bumped v6 → v7.
 - 2026-06-14: Navigation overhaul. Added 4 coloured fastext buttons
   (red/green/yellow/cyan) above the digit keypad, mirroring an authentic
   teletext remote. Labels and target pages update from `payload.fastext`

@@ -98,20 +98,20 @@ class Grid {
     this.writeRow(row, r, rightFg, bg, start);
   }
 
-  // Row 0: authentic Ceefax header on BLACK background with coloured text.
-  // Format: "P302 CEEFAX 302  Mon 11 Nov 22:54/17"
-  // Colours: page yellow, "CEEFAX" white, page-repeat white, date cyan, clock yellow.
+  // Row 0: authentic teletext header on BLACK background with coloured text.
+  // Format: "P302 TELETEXT     Mon 11 Nov 22:54/17"
+  // Colours: page yellow, brand white, date cyan, clock yellow.
   // The client overwrites cols 16-39 each second with the live date and clock.
-  writeHeaderBand(pageNum, _title, { subPage, totalSubPages } = {}) {
+  // Sub-page indicator lives on the right edge of the section title bar (row 2)
+  // - that's the authentic placement and avoids colliding with the clock.
+  writeHeaderBand(pageNum, _title, opts = {}) {
     this.fillRow(0, ' ', 'W', 'K');
     const padded = String(pageNum).padStart(3, ' ');
     this.writeRow(0, `P${padded}`, 'Y', 'K', 0);
-    this.writeRow(0, 'CEEFAX', 'W', 'K', 5);
-    if (totalSubPages && totalSubPages > 1) {
-      this.writeRow(0, `${subPage}/${totalSubPages}`, 'W', 'K', 12);
-    } else {
-      this.writeRow(0, padded, 'W', 'K', 12);
-    }
+    this.writeRow(0, 'TELETEXT', 'W', 'K', 5);
+    // Stash sub-page info so writeSectionTitle can render the indicator.
+    this._subPage = opts.subPage;
+    this._totalSubPages = opts.totalSubPages;
     // Seed the right segment with a placeholder. Client redraws every second
     // using local time and the authentic "/" between minutes and seconds.
     const now = new Date();
@@ -129,13 +129,19 @@ class Grid {
 
   // A full-width coloured section title bar (the kind that sat just under
   // the header on real Ceefax index pages). One full row, white text on
-  // the section background colour.
+  // the section background colour. Optionally writes "1/N" on the right
+  // edge - authentic placement, mirrors real Ceefax sub-page indicators
+  // and avoids colliding with the row-0 clock.
   writeSectionTitle(row, title, sectionColour) {
     const bg = sectionColour;
     const fg = headerTextColourFor(bg);
     this.fillRow(row, ' ', fg, bg);
-    const t = String(title).toUpperCase().slice(0, COLS - 2);
+    const t = String(title).toUpperCase().slice(0, COLS - 6);
     this.writeRow(row, t, fg, bg, Math.max(1, Math.floor((COLS - t.length) / 2)));
+    if (this._totalSubPages && this._totalSubPages > 1) {
+      const indicator = `${this._subPage || 1}/${this._totalSubPages}`.slice(0, 5);
+      this.writeRow(row, indicator, fg, bg, COLS - indicator.length - 1);
+    }
   }
 
   // Authentic teletext separator: a row of filled block characters in the
