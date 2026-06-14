@@ -1,4 +1,4 @@
-const VERSION = 'v9';
+const VERSION = 'v10';
 const SHELL_CACHE = `ceefax-shell-${VERSION}`;
 const API_CACHE = `ceefax-api-${VERSION}`;
 

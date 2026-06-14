@@ -289,13 +289,7 @@
     const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
     const col = Math.floor(x / CELL_W);
     const row = Math.floor(y / CELL_H);
-    if (row === 24) {
-      const block = Math.floor(col / 10);
-      const colour = FASTEXT_COLOURS[block];
-      const page = fastextTarget(colour);
-      if (page) navigate(page);
-      return;
-    }
+    // Row 24 fastext is gone from the canvas - the remote handles it.
     if (current && current.grid && current.grid[row] && current.grid[row][col] && current.grid[row][col].l) {
       window.open(current.grid[row][col].l, '_blank', 'noopener');
     }

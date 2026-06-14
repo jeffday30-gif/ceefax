@@ -151,22 +151,13 @@ class Grid {
     for (let c = 0; c < COLS; c++) this.set(row, c, '█', colour, 'K');
   }
 
-  // Row 24: four coloured blocks: per-page fastext destinations, label
-  // centred in each block. Colours are red, green, yellow, cyan.
+  // Historically row 24 held the four coloured fastext blocks. The remote
+  // surround now has physical fastext buttons, so the on-canvas duplicate
+  // is intentionally a no-op. The fastext targets still ship in the API
+  // payload so the remote stays dynamic. Kept as a no-op rather than
+  // deleting the call sites - every renderer calls it.
   writeFastextBar() {
-    const blockWidth = 10;
-    for (let i = 0; i < 4; i++) {
-      const target = this.fastext[i] || DEFAULT_FASTEXT[i];
-      const colour = FASTEXT_COLOURS[i];
-      const fg = headerTextColourFor(colour);
-      const start = i * blockWidth;
-      for (let c = 0; c < blockWidth; c++) {
-        this.set(24, start + c, ' ', fg, colour);
-      }
-      const label = String(target.label || '').slice(0, blockWidth);
-      const labelStart = start + Math.floor((blockWidth - label.length) / 2);
-      this.writeRow(24, label, fg, colour, labelStart);
-    }
+    // intentionally empty
   }
 
   toJSON({ page, subPage = 1, totalSubPages = 1, title = '', sectionColour } = {}) {
