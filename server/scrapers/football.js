@@ -191,19 +191,34 @@ async function fetchWorldCup(http) {
     const matches = matchesRes.value.data.matches || [];
     const today = new Date();
     const isSameDay = (a, b) => a.toDateString() === b.toDateString();
-    const todayMatches = matches
-      .filter((m) => m.utcDate && isSameDay(new Date(m.utcDate), today))
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+    // The complete tournament fixture list, sorted by kickoff. Used by
+    // P306 so the user can paginate through every match.
+    const allMatches = matches
+      .filter((m) => m.utcDate)
+      .sort((a, b) => a.utcDate.localeCompare(b.utcDate))
       .map((m) => {
         const t = new Date(m.utcDate);
+        const ft = m.score && m.score.fullTime;
+        const played = m.status === 'FINISHED';
         return {
+          date: `${t.toLocaleDateString('en-GB', { weekday: 'short' })} ${t.getUTCDate()} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][t.getUTCMonth()]}`,
           time: `${String(t.getUTCHours()).padStart(2, '0')}:${String(t.getUTCMinutes()).padStart(2, '0')}`,
           venue: m.venue || '',
           home: shortenTeam(m.homeTeam && m.homeTeam.name),
           away: shortenTeam(m.awayTeam && m.awayTeam.name),
+          homeScore: played && ft && ft.home != null ? ft.home : null,
+          awayScore: played && ft && ft.away != null ? ft.away : null,
+          status: played ? 'FT' : (m.status === 'IN_PLAY' ? 'LIVE' : (m.status === 'PAUSED' ? 'HT' : '')),
           stage: stageLabel(m.stage, m.group),
         };
       });
-    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+
+    const todayMatches = allMatches.filter((f, i) => {
+      const m = matches[i];
+      return m.utcDate && isSameDay(new Date(m.utcDate), today);
+    });
     const yesterdayResults = matches
       .filter((m) => m.status === 'FINISHED' && m.utcDate && isSameDay(new Date(m.utcDate), yesterday))
       .map((m) => {
@@ -217,6 +232,7 @@ async function fetchWorldCup(http) {
           venue: m.venue || '',
         };
       });
+    if (allMatches.length) result.allMatches = allMatches;
     if (todayMatches.length) result.todayFixtures = todayMatches;
     if (yesterdayResults.length) result.yesterdayResults = yesterdayResults;
   } else {
@@ -261,7 +277,7 @@ async function run() {
         : (existing.topScorers || []),
     });
 
-    if (wc.todayFixtures || wc.yesterdayResults || wc.topScorers || wc.groups) {
+    if (wc.todayFixtures || wc.yesterdayResults || wc.topScorers || wc.groups || wc.allMatches) {
       const wcCache = cache.payload('worldcup') || {};
       cache.set('worldcup', {
         ...wcCache,
@@ -270,6 +286,7 @@ async function run() {
         yesterdayResults:  wc.yesterdayResults  || wcCache.yesterdayResults,
         topScorers:        wc.topScorers        || wcCache.topScorers,
         groups:            wc.groups            || wcCache.groups,
+        allMatches:        wc.allMatches        || wcCache.allMatches,
       });
     }
 

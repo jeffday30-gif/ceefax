@@ -81,13 +81,16 @@
       for (let c = 0; c < COLS; c++) {
         const cell = grid[r][c];
         const ch = cell.c;
-        if (ch && ch !== ' ') {
+        const hasChar = ch && ch !== ' ';
+        if (hasChar) {
           ctx.fillStyle = COLOURS[cell.f] || '#fff';
           const size = cell.d ? CELL_H * 2 : CELL_H;
           ctx.font = `${size}px "Bedstead", monospace`;
           ctx.fillText(ch, c * CELL_W, r * CELL_H);
         }
-        if (cell.l) {
+        // Underline links, but only under visible characters - the
+        // trailing padding spaces were rendering as a long cyan bar.
+        if (cell.l && hasChar) {
           ctx.fillStyle = COLOURS.C;
           ctx.fillRect(c * CELL_W, r * CELL_H + CELL_H - 1, CELL_W, 1);
         }

@@ -122,52 +122,83 @@ function renderIndex(g) {
   return g.toJSON({ page: 305, subPage: 1, totalSubPages: 1, title: 'WORLD CUP' });
 }
 
-function renderFixtures(g) {
+function renderFixtures(g, subPage = 1) {
+  // Prefer the full tournament fixture list from football-data.org -
+  // user wants to paginate through every match, not just today's.
+  const wc = data.worldcup();
+  const all = (wc && wc.allMatches) || [];
+
+  // Index BBC live events by team pair so we can patch live scores in
+  // on top of the static fixture list.
+  const liveByPair = new Map();
   const buckets = wcLiveBuckets();
-  // Show whatever BBC's scores-fixtures page returned - they already scope
-  // it sensibly. The date filter was rejecting matches that BBC considers
-  // "today" but kick off after midnight UTC.
+  if (buckets) {
+    for (const k of ['live', 'upcoming', 'finished']) {
+      for (const e of buckets[k] || []) {
+        if (e.home && e.away) liveByPair.set(`${e.home}|${e.away}`, e);
+      }
+    }
+  }
+
+  if (!isEmpty(all)) {
+    const perPage = 4;       // 4 matches per sub-page leaves room for date headers
+    const total = Math.max(1, Math.ceil(all.length / perPage));
+    const sub = Math.min(Math.max(1, Number(subPage) || 1), total);
+    g.writeHeaderBand(306, 'FIXTURES', { subPage: sub, totalSubPages: total });
+    g.writeSectionTitle(2, 'WORLD CUP FIXTURES', SECTION);
+
+    const slice = all.slice((sub - 1) * perPage, sub * perPage);
+    let row = 4;
+    let lastDate = '';
+    for (const f of slice) {
+      if (row > 21) break;
+      if (f.date && f.date !== lastDate) {
+        g.writeRow(row, f.date, 'Y', 'K', 1);
+        lastDate = f.date;
+        row++;
+      }
+      // Overlay live data if we have a match for this fixture.
+      const live = liveByPair.get(`${f.home}|${f.away}`);
+      const homeScore = live && live.homeScore != null ? live.homeScore : f.homeScore;
+      const awayScore = live && live.awayScore != null ? live.awayScore : f.awayScore;
+      const status = (live && live.status) || f.status || f.time;
+      const bbcUrl = live && live.bbcUrl;
+      const link = bbcUrl ? { l: bbcUrl } : {};
+      const scored = homeScore != null && awayScore != null;
+      const middle = scored ? `${homeScore}-${awayScore}` : ' v ';
+      const isLive = /^\d+/.test(status) || status === 'LIVE' || status === 'HT';
+      const statusColour = isLive ? 'R' : (status === 'FT' ? 'C' : 'W');
+      g.writeRow(row, pad(f.home, 11), 'W', 'K', 1, link);
+      g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13);
+      g.writeRow(row, pad(f.away, 11), 'W', 'K', 19, link);
+      g.writeRow(row, String(status || '').slice(0, 6).padStart(6, ' '), statusColour, 'K', 31, link);
+      if (f.stage || f.venue) {
+        const subLine = `${(f.stage || '').slice(0, 16)} ${(f.venue || '').slice(0, 20)}`.trim();
+        g.writeRow(row + 1, subLine.slice(0, 38), 'C', 'K', 1, link);
+      }
+      row += 3;
+    }
+    g.writeRow(23, 'SWIPE LEFT/RIGHT FOR MORE FIXTURES', 'C', 'K', 0);
+    setWCFastext(g, 306);
+    g.writeFastextBar();
+    return g.toJSON({ page: 306, subPage: sub, totalSubPages: total, title: 'WORLD CUP FIXTURES' });
+  }
+
+  // Fallback path: BBC live data only (used before football-data.org has run).
   let events = [];
   if (buckets) {
     events = [...buckets.live, ...buckets.upcoming, ...buckets.finished];
   }
-  if (isEmpty(events)) {
-    const wc = data.worldcup();
-    const fallback = wc.todayFixtures || [];
-    if (isEmpty(fallback)) return renderUnavailable(306, "TODAY'S FIXTURES", 'NO MATCHES TODAY');
-    g.writeHeaderBand(306, "TODAY'S FIXTURES", { subPage: 1, totalSubPages: 1 });
-    g.writeSectionTitle(2, "WORLD CUP TODAY", SECTION);
-    let row = 4;
-    for (const f of fallback) {
-      if (row > 21) break;
-      g.writeRow(row, f.time, 'Y', 'K', 1);
-      g.writeRow(row, pad(f.stage, 9), 'C', 'K', 7);
-      g.writeRow(row, pad(f.home, 10), 'W', 'K', 17);
-      g.writeRow(row, ' v ', 'Y', 'K', 28);
-      g.writeRow(row, pad(f.away, 10), 'W', 'K', 31);
-      row++;
-      if (f.venue) g.writeRow(row, pad(f.venue, 30), 'C', 'K', 7);
-      row += 2;
-    }
-    setWCFastext(g, 306);
-    g.writeFastextBar();
-    return g.toJSON({ page: 306, subPage: 1, totalSubPages: 1, title: "TODAY'S FIXTURES" });
-  }
+  if (isEmpty(events)) return renderUnavailable(306, 'WORLD CUP FIXTURES', 'FIXTURES NOT YET AVAILABLE');
 
-  // Sort: live first (most engaging), then upcoming by kickoff, then finished
-  events.sort((a, b) => {
-    const liveA = /^\d+|^LIVE|^HT/.test(a.status) ? 0 : (a.status === 'FT' ? 2 : 1);
-    const liveB = /^\d+|^LIVE|^HT/.test(b.status) ? 0 : (b.status === 'FT' ? 2 : 1);
-    if (liveA !== liveB) return liveA - liveB;
-    return (a.kickoffISO || '').localeCompare(b.kickoffISO || '');
-  });
-
+  events.sort((a, b) => (a.kickoffISO || '').localeCompare(b.kickoffISO || ''));
   const perPage = 6;
   const total = Math.max(1, Math.ceil(events.length / perPage));
-  g.writeHeaderBand(306, "TODAY'S FIXTURES", { subPage: 1, totalSubPages: total });
-  g.writeSectionTitle(2, "WORLD CUP TODAY", SECTION);
+  const sub = Math.min(Math.max(1, Number(subPage) || 1), total);
+  g.writeHeaderBand(306, 'FIXTURES', { subPage: sub, totalSubPages: total });
+  g.writeSectionTitle(2, 'WORLD CUP FIXTURES', SECTION);
   let row = 4;
-  for (const e of events.slice(0, perPage)) {
+  for (const e of events.slice((sub - 1) * perPage, sub * perPage)) {
     if (row > 21) break;
     writeMatchPair(g, row, e);
     row += 3;
@@ -175,7 +206,7 @@ function renderFixtures(g) {
   g.writeRow(23, 'TAP A MATCH FOR BBC LIVE TEXT', 'C', 'K', 0);
   setWCFastext(g, 306);
   g.writeFastextBar();
-  return g.toJSON({ page: 306, subPage: 1, totalSubPages: total, title: "TODAY'S FIXTURES" });
+  return g.toJSON({ page: 306, subPage: sub, totalSubPages: total, title: 'WORLD CUP FIXTURES' });
 }
 
 function renderResults(g, subPage) {
@@ -335,7 +366,7 @@ function renderWCNews(g) {
 function render(pageNum, { subPage = 1 } = {}) {
   const g = new Grid();
   if (pageNum === 305) return renderIndex(g);
-  if (pageNum === 306) return renderFixtures(g);
+  if (pageNum === 306) return renderFixtures(g, subPage);
   if (pageNum === 307) return renderResults(g, subPage);
   if (pageNum === 326) return renderGroupTables(g, subPage);
   if (pageNum === 327) return renderKnockout(g);
