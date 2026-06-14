@@ -20,15 +20,10 @@ function render(pageNum, _opts = {}) {
     'W', 'K', 1);
 
   g.writeRow(15, 'CONTACT', 'Y', 'K', 1);
-  g.writeRow(16, 'mail@teletextreborn.app', 'C', 'K', 3,
-    { l: 'mailto:mail@teletextreborn.app' });
+  g.writeRow(16, '(coming soon)', 'C', 'K', 3);
 
-  g.writeRow(18, 'SOURCE', 'Y', 'K', 1);
-  g.writeRow(19, 'github.com/jeffday30-gif/ceefax', 'C', 'K', 3,
-    { l: 'https://github.com/jeffday30-gif/ceefax' });
-
-  g.writeRow(21, 'VERSION', 'Y', 'K', 1);
-  g.writeRow(22, '-',       'W', 'K', 3);
+  g.writeRow(19, 'VERSION', 'Y', 'K', 1);
+  g.writeRow(20, '-',       'W', 'K', 3);
 
   g.setFastext([
     { label: 'INDEX', page: 100 },

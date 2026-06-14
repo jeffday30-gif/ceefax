@@ -29,6 +29,11 @@
   const fastextBtns = Object.fromEntries(
     FASTEXT_COLOURS.map((c) => [c, fastextRow.querySelector(`[data-fastext="${c}"]`)])
   );
+  const subpageRow = document.getElementById('subpage-row');
+  const subpageIndicator = document.getElementById('subpage-indicator');
+  const hint = document.getElementById('hint');
+  const LAST_PAGE_KEY = 'teletext.lastPage';
+  const HINT_SEEN_KEY = 'teletext.hintSeen';
 
   let current = null;
   let currentSub = 1;
@@ -197,12 +202,15 @@
       drawGrid(payload.grid);
       paintHeaderRight();
       updateFastextButtons();
+      updateSubpageRow();
       clearLoading();
       if (push) {
         const target = `/?p=${pageNum}${sub > 1 ? `&s=${sub}` : ''}`;
         history.pushState({ pageNum, sub }, '', target);
       }
       document.title = `P${pageNum} ${payload.title || 'TELETEXT'}`;
+      try { localStorage.setItem(LAST_PAGE_KEY, String(pageNum)); } catch {}
+      maybeFadeHint();
       startSubCycle();
     } catch (err) {
       console.error('navigate failed', err);
@@ -235,6 +243,44 @@
       btn.dataset.page = String(entry && entry.page || '');
       btn.disabled = !(entry && entry.page);
     }
+  }
+
+  function updateSubpageRow() {
+    if (!subpageRow) return;
+    const total = (current && current.totalSubPages) || 1;
+    if (total <= 1) {
+      subpageRow.hidden = true;
+      return;
+    }
+    subpageRow.hidden = false;
+    subpageIndicator.textContent = `${currentSub}/${total}`;
+  }
+
+  function navigateSubPage(direction) {
+    if (!current || current.totalSubPages <= 1) return;
+    const total = current.totalSubPages;
+    let next = currentSub + direction;
+    if (next < 1) next = total;
+    if (next > total) next = 1;
+    // Manual sub-page nav also engages HOLD so the auto-cycle doesn't
+    // wrestle the user's choice back.
+    if (!holding) setHolding(true);
+    navigate(current.page, next, false);
+  }
+
+  function maybeFadeHint() {
+    if (!hint || hint.classList.contains('fade')) return;
+    try {
+      if (localStorage.getItem(HINT_SEEN_KEY)) {
+        hint.classList.add('fade');
+        return;
+      }
+    } catch {}
+  }
+  function dismissHint() {
+    if (!hint || hint.classList.contains('fade')) return;
+    hint.classList.add('fade');
+    try { localStorage.setItem(HINT_SEEN_KEY, '1'); } catch {}
   }
 
   function handleCanvasClick(ev) {
@@ -286,6 +332,8 @@
       if (current && current.page < 999) navigate(current.page + 1);
       return;
     }
+    if (ev.key === 'ArrowLeft')  { ev.preventDefault(); navigateSubPage(-1); return; }
+    if (ev.key === 'ArrowRight') { ev.preventDefault(); navigateSubPage( 1); return; }
     if (ev.key === 'h' || ev.key === 'H') { ev.preventDefault(); setHolding(!holding); return; }
     if (ev.key === 'r' || ev.key === 'R') { ev.preventDefault(); navigate(fastextTarget('red')); return; }
     if (ev.key === 'g' || ev.key === 'G') { ev.preventDefault(); navigate(fastextTarget('green')); return; }
@@ -320,12 +368,31 @@
         if (target) navigate(target);
       });
     }
+    if (subpageRow) {
+      subpageRow.addEventListener('click', (ev) => {
+        const btn = ev.target.closest('button');
+        if (!btn) return;
+        navigateSubPage(btn.dataset.sub === 'next' ? 1 : -1);
+      });
+    }
+    // Any tap on the device dismisses the first-launch hint.
+    document.addEventListener('click', dismissHint, { once: true, capture: true });
   }
 
   function readUrl() {
     const params = new URLSearchParams(location.search);
-    const p = Number(params.get('p')) || 100;
-    const s = Number(params.get('s')) || 1;
+    // Priority: explicit ?p= in URL, then localStorage "last visited",
+    // then home page 100. So an opened-from-bookmark URL always wins,
+    // but a fresh launch returns the user to where they were.
+    let p = Number(params.get('p'));
+    let s = Number(params.get('s')) || 1;
+    if (!p) {
+      try {
+        const stored = Number(localStorage.getItem(LAST_PAGE_KEY));
+        if (stored >= 100 && stored <= 999) p = stored;
+      } catch {}
+    }
+    if (!p) p = 100;
     return { p, s };
   }
 

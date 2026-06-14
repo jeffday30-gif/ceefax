@@ -69,7 +69,7 @@ function writeMatchPair(g, row, e) {
   const statusColour = /^\d+/.test(status) || status === 'LIVE' || status === 'HT' ? 'R'
                      : status === 'FT' ? 'C' : 'W';
   g.writeRow(row, home, 'W', 'K', 1, link);
-  g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13, link);
+  g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13);
   g.writeRow(row, away, 'W', 'K', 19, link);
   g.writeRow(row, String(status).slice(0, 6).padStart(6, ' '), statusColour, 'K', 31, link);
   if (e.stage || e.venue) {

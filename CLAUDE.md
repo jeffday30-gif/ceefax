@@ -167,6 +167,22 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-06-14: Five UX additions + About-page tidy. (a) Sub-page nav
+  strip (`< 1/3 >`) below the digit keypad, hidden when total=1,
+  shown otherwise. Tapping a button engages HOLD automatically so the
+  auto-cycle doesn't undo the user's choice. Arrow Left/Right
+  keyboard shortcuts wired too. (b) `localStorage` "last visited"
+  page memory at `teletext.lastPage`. Fresh launch returns to the
+  user's last page; explicit `?p=` in the URL still wins (bookmarks).
+  (c) First-launch hint line below the TV: "Type a 3-digit page
+  number or tap a colour button". Fades on first interaction, sticks
+  faded via `teletext.hintSeen`. (d) BBC live-match minute label
+  widened 5→6 chars so `45+2'` and `90+5'` survive. (e) Landscape /
+  tablet layout: TV on the left, controls stacked on the right,
+  triggered at `min-width: 720px AND orientation: landscape`. iPad
+  cap at 900px so the device doesn't dominate. About page no longer
+  shows the GitHub link; contact slot reads "(coming soon)" until
+  the user gives an email. SW VERSION v8 → v9.
 - 2026-06-14: UX polish from iPhone testing. (a) Grey "90s portable TV"
   shell - the previous brown-grey bezel was too dark; user wanted retro
   grey, now `linear-gradient(180deg, #b8b8b8, #888a8c, #5a5c5e)` with

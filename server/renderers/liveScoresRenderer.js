@@ -29,7 +29,7 @@ function writeMatchPair(g, row, e) {
   const isLive = /^\d+/.test(e.status) || e.status === 'LIVE' || e.status === 'HT';
   const statusColour = isLive ? 'R' : (e.status === 'FT' ? 'C' : 'W');
   g.writeRow(row, home, isLive ? 'Y' : 'W', 'K', 1, link);
-  g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13, link);
+  g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13);
   g.writeRow(row, away, isLive ? 'Y' : 'W', 'K', 19, link);
   g.writeRow(row, String(e.status || '').slice(0, 6).padStart(6, ' '), statusColour, 'K', 31, link);
   const homeS = formatScorers(e.homeScorers);

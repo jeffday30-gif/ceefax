@@ -193,7 +193,7 @@ function renderLiveScores(g, subPage) {
     const statusColour = /^\d+/.test(e.status) || e.status === 'LIVE' || e.status === 'HT' ? 'R'
                        : e.status === 'FT' ? 'C' : 'W';
     g.writeRow(row, home, 'W', 'K', 1, link);
-    g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13, link);
+    g.writeRow(row, middle.padStart(5, ' '), 'Y', 'K', 13);
     g.writeRow(row, away, 'W', 'K', 19, link);
     g.writeRow(row, String(e.status || '').slice(0, 6).padStart(6, ' '), statusColour, 'K', 31, link);
     row += 2;

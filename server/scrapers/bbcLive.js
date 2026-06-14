@@ -69,12 +69,13 @@ function statusLabel(event) {
   if (raw === 'Postponed') return 'PPD';
   if (raw === 'Cancelled') return 'OFF';
   if (raw === 'Live' || raw === 'InProgress') {
+    // BBC may use "45+2'", "90+5'", "HT" - keep the apostrophe for authenticity.
     const min = event.minute || (event.statusComment && event.statusComment.value);
-    return min ? String(min).slice(0, 5) : 'LIVE';
+    return min ? String(min).slice(0, 6) : 'LIVE';
   }
   return event.statusComment && event.statusComment.value
-    ? String(event.statusComment.value).slice(0, 5)
-    : raw.slice(0, 5);
+    ? String(event.statusComment.value).slice(0, 6)
+    : raw.slice(0, 6);
 }
 
 function scoreOf(side) {

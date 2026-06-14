@@ -25,6 +25,7 @@
       </div>
       <div class="tv-brand">TELETEXT REBORN</div>
     </div>
+    <div class="controls">
     <div id="status-line" aria-live="polite"></div>
     <div class="remote">
       <div id="fastext-row" role="group" aria-label="Fastext buttons">
@@ -47,11 +48,18 @@
         <button class="key" data-digit="0" type="button">0</button>
         <button class="key key-fn" data-action="hold" id="hold-btn" type="button">HOLD</button>
       </div>
+      <div id="subpage-row" role="group" aria-label="Sub-page navigation" hidden>
+        <button class="subkey" data-sub="prev" type="button" aria-label="Previous sub-page">&lt;</button>
+        <span id="subpage-indicator">1/1</span>
+        <button class="subkey" data-sub="next" type="button" aria-label="Next sub-page">&gt;</button>
+      </div>
       <div id="nav-row" role="group" aria-label="Quick navigation">
         <button class="navkey" data-nav="100" type="button">HOME</button>
         <button class="navkey" data-nav="199" type="button">INDEX</button>
         <button class="navkey" data-nav="198" type="button">ABOUT</button>
       </div>
+    </div>
+    <div id="hint">Type a 3-digit page number or tap a colour button</div>
     </div>
   </div>
   <script src="/app.js"></script>
