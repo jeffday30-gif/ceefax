@@ -10,13 +10,19 @@ const scrapers = [
   require('./lottery'),
 ];
 
+// Last outcome per scraper, surfaced via /healthz so production failures
+// (e.g. a source blocking Render's IP range) are diagnosable without SSH.
+const status = {};
+
 async function runOne(scraper) {
   const t0 = Date.now();
   try {
     await scraper.run();
     console.log(`scraper ${scraper.name}: completed in ${Date.now() - t0}ms`);
+    status[scraper.name] = { lastRunAt: Date.now(), ok: true };
   } catch (err) {
     console.warn(`scraper ${scraper.name}: threw:`, err.message);
+    status[scraper.name] = { lastRunAt: Date.now(), ok: false, error: String(err.message).slice(0, 200) };
   }
 }
 
@@ -37,4 +43,4 @@ function start() {
   }
 }
 
-module.exports = { start, scrapers };
+module.exports = { start, scrapers, status };

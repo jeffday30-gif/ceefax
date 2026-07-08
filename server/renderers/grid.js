@@ -14,6 +14,22 @@ const DEFAULT_FASTEXT = [
   { label: 'TV',      page: 601 },
 ];
 
+// 3x5 pixel digit font for writeBigText. '#' = set pixel.
+const BIG_FONT = {
+  '0': ['###', '#.#', '#.#', '#.#', '###'],
+  '1': ['.#.', '##.', '.#.', '.#.', '###'],
+  '2': ['###', '..#', '###', '#..', '###'],
+  '3': ['###', '..#', '.##', '..#', '###'],
+  '4': ['#.#', '#.#', '###', '..#', '..#'],
+  '5': ['###', '#..', '###', '..#', '###'],
+  '6': ['###', '#..', '###', '#.#', '###'],
+  '7': ['###', '..#', '.#.', '.#.', '.#.'],
+  '8': ['###', '#.#', '###', '#.#', '###'],
+  '9': ['###', '#.#', '###', '..#', '###'],
+  '-': ['...', '...', '###', '...', '...'],
+  ' ': ['...', '...', '...', '...', '...'],
+};
+
 class Grid {
   constructor() {
     this.rows = ROWS;
@@ -40,6 +56,7 @@ class Grid {
     const cell = { c: char, f: fg, b: bg };
     if (extra.d) cell.d = 1;
     if (extra.l) cell.l = extra.l;
+    if (extra.p) cell.p = extra.p; // internal page link
     this.cells[row][col] = cell;
   }
 
@@ -132,6 +149,13 @@ class Grid {
   // the section background colour. Optionally writes "1/N" on the right
   // edge - authentic placement, mirrors real Ceefax sub-page indicators
   // and avoids colliding with the row-0 clock.
+  // Flags the page's data source as stale. writeSectionTitle renders a dot
+  // on the left edge of the title bar - the authentic Ceefax "page being
+  // updated" convention, repurposed as an honest data-age indicator.
+  markStale() {
+    this._stale = true;
+  }
+
   writeSectionTitle(row, title, sectionColour) {
     const bg = sectionColour;
     const fg = headerTextColourFor(bg);
@@ -141,6 +165,9 @@ class Grid {
     if (this._totalSubPages && this._totalSubPages > 1) {
       const indicator = `${this._subPage || 1}/${this._totalSubPages}`.slice(0, 5);
       this.writeRow(row, indicator, fg, bg, COLS - indicator.length - 1);
+    }
+    if (this._stale) {
+      this.set(row, 0, '●', 'Y', bg);
     }
   }
 
@@ -168,6 +195,57 @@ class Grid {
   // instead of horizontal rules.
   writeSeparator(row, colour = 'C') {
     for (let c = 0; c < COLS; c++) this.set(row, c, '█', colour, 'K');
+  }
+
+  // --- SAA5050 block mosaics -------------------------------------------
+  // A mosaic cell divides the character cell into a 2x3 grid of blocks.
+  // `mask` is a 6-bit value: bit0 top-left, bit1 top-right, bit2 mid-left,
+  // bit3 mid-right, bit4 bottom-left, bit5 bottom-right (the classic
+  // teletext sixel ordering). The client draws the blocks with fillRect -
+  // pixel-perfect, no font dependency.
+  setMosaic(row, col, mask, fg = 'W', bg = 'K') {
+    if (row < 0 || row >= ROWS || col < 0 || col >= COLS) return;
+    if (!mask) { this.set(row, col, ' ', fg, bg); return; }
+    this.cells[row][col] = { c: ' ', f: fg, b: bg, m: mask & 0x3f };
+  }
+
+  // Draw a pixel bitmap in mosaic blocks. `bitmap` is an array of strings;
+  // any character other than space/dot is a set pixel. Each grid cell holds
+  // 2x3 bitmap pixels, so a 52x51 bitmap covers 26x17 cells.
+  drawBitmap(topRow, leftCol, bitmap, fg = 'B', bg = 'K') {
+    const px = (x, y) => {
+      const line = bitmap[y];
+      if (!line || x >= line.length) return 0;
+      const ch = line[x];
+      return ch !== ' ' && ch !== '.' ? 1 : 0;
+    };
+    const cellRows = Math.ceil(bitmap.length / 3);
+    const width = Math.max(...bitmap.map((l) => l.length));
+    const cellCols = Math.ceil(width / 2);
+    for (let cr = 0; cr < cellRows; cr++) {
+      for (let cc = 0; cc < cellCols; cc++) {
+        const x = cc * 2;
+        const y = cr * 3;
+        const mask =
+          (px(x, y)         << 0) | (px(x + 1, y)     << 1) |
+          (px(x, y + 1)     << 2) | (px(x + 1, y + 1) << 3) |
+          (px(x, y + 2)     << 4) | (px(x + 1, y + 2) << 5);
+        if (mask) this.setMosaic(topRow + cr, leftCol + cc, mask, fg, bg);
+      }
+    }
+  }
+
+  // Big block digits: a 3x5 pixel font rendered in mosaics. Each character
+  // advances 4 bitmap pixels (2 cells); glyphs are 5px tall (2 cell rows).
+  // Used for lottery numbers and other showpiece numerals.
+  writeBigText(topRow, leftCol, text, fg = 'W', bg = 'K') {
+    const rows = ['', '', '', '', ''];
+    for (const ch of String(text)) {
+      const glyph = BIG_FONT[ch] || BIG_FONT[' '];
+      for (let i = 0; i < 5; i++) rows[i] += glyph[i] + ' ';
+    }
+    this.drawBitmap(topRow, leftCol, rows, fg, bg);
+    return leftCol + Math.ceil((String(text).length * 4) / 2);
   }
 
   // Historically row 24 held the four coloured fastext blocks. The remote

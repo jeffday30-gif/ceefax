@@ -13,7 +13,12 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
 async function fetchHtml(url) {
   const { data } = await axios.get(url, {
     timeout: 12000,
-    headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
+    headers: {
+      'User-Agent': UA,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-GB,en;q=0.9',
+      Referer: 'https://www.lottery.co.uk/',
+    },
   });
   return data;
 }
@@ -51,12 +56,16 @@ function extractJackpot(html) {
   return null;
 }
 
+// Remember why each game failed so the registry can surface it in /healthz.
+const lastErrors = [];
+
 async function scrapeGame(label, url, ballCount, bonusCount) {
   try {
     const html = await fetchHtml(url);
     const balls = extractFirstBlock(html, ballCount + bonusCount);
     if (!balls) {
       console.warn(`lottery: ${label} parse failed (no balls found)`);
+      lastErrors.push(`${label}: parse failed (page shape changed or bot-blocked)`);
       return null;
     }
     return {
@@ -67,11 +76,13 @@ async function scrapeGame(label, url, ballCount, bonusCount) {
     };
   } catch (err) {
     console.warn(`lottery: ${label} fetch failed:`, err.message);
+    lastErrors.push(`${label}: ${err.message}`);
     return null;
   }
 }
 
 async function run() {
+  lastErrors.length = 0;
   const [lotto, thunderball, euromillions, setForLife] = await Promise.all([
     scrapeGame('lotto',        'https://www.lottery.co.uk/amp/lotto/results',        6, 1),
     scrapeGame('thunderball',  'https://www.lottery.co.uk/amp/thunderball/results',  5, 1),
@@ -81,8 +92,8 @@ async function run() {
 
   const got = [lotto, thunderball, euromillions, setForLife].filter(Boolean).length;
   if (got === 0) {
-    console.warn('lottery: all four games failed to scrape, leaving cache untouched');
-    return;
+    // Throw so the scraper registry records the reason and /healthz shows it.
+    throw new Error(`all four games failed: ${lastErrors[0] || 'unknown'}`);
   }
 
   cache.set('lottery', {

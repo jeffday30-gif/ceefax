@@ -47,55 +47,100 @@
     try { await document.fonts.load(`${CELL_H}px Bedstead`); } catch {}
   }
 
-  function drawCell(row, col, cell) {
+  function drawCellBg(row, col, cell) {
+    ctx.fillStyle = COLOURS[cell.b] || '#000';
+    ctx.fillRect(col * CELL_W, row * CELL_H, CELL_W, CELL_H);
+  }
+
+  // SAA5050 mosaic sub-block geometry: the 12x20 cell divides into a 2x3
+  // grid of blocks, 6px wide, rows 7/7/6 tall.
+  const MOSAIC_BLOCKS = [
+    [0, 0, 6, 7],  [6, 0, 6, 7],   // bits 0,1 - top
+    [0, 7, 6, 7],  [6, 7, 6, 7],   // bits 2,3 - middle
+    [0, 14, 6, 6], [6, 14, 6, 6],  // bits 4,5 - bottom
+  ];
+
+  function drawCellFg(row, col, cell) {
     const x = col * CELL_W;
     const y = row * CELL_H;
-    ctx.fillStyle = COLOURS[cell.b] || '#000';
-    ctx.fillRect(x, y, CELL_W, CELL_H);
+    if (cell.m) {
+      ctx.fillStyle = COLOURS[cell.f] || '#fff';
+      for (let bit = 0; bit < 6; bit++) {
+        if (cell.m & (1 << bit)) {
+          const [bx, by, bw, bh] = MOSAIC_BLOCKS[bit];
+          ctx.fillRect(x + bx, y + by, bw, bh);
+        }
+      }
+      return;
+    }
     const ch = cell.c;
-    if (ch && ch !== ' ') {
+    const hasChar = ch && ch !== ' ';
+    if (hasChar) {
       ctx.fillStyle = COLOURS[cell.f] || '#fff';
       const size = cell.d ? CELL_H * 2 : CELL_H;
       ctx.font = `${size}px "Bedstead", monospace`;
       ctx.fillText(ch, x, y);
     }
-    // Linked cells get a 1px cyan underline at the bottom of the cell.
-    if (cell.l) {
+    // Underline links, but only under visible characters. External links
+    // (l) underline cyan; internal page links (p) underline yellow.
+    if (cell.l && hasChar) {
       ctx.fillStyle = COLOURS.C;
+      ctx.fillRect(x, y + CELL_H - 1, CELL_W, 1);
+    } else if (cell.p && hasChar) {
+      ctx.fillStyle = COLOURS.Y;
       ctx.fillRect(x, y + CELL_H - 1, CELL_W, 1);
     }
   }
 
+  function drawCell(row, col, cell) {
+    drawCellBg(row, col, cell);
+    drawCellFg(row, col, cell);
+  }
+
+  // Draw one full row (bg then fg). If the row above contains double-height
+  // characters, repaint its fg so the descending halves survive this row's
+  // background fill.
+  function drawRow(grid, r) {
+    for (let c = 0; c < COLS; c++) drawCellBg(r, c, grid[r][c]);
+    if (r > 0 && grid[r - 1].some((cell) => cell.d)) {
+      for (let c = 0; c < COLS; c++) drawCellFg(r - 1, c, grid[r - 1][c]);
+    }
+    for (let c = 0; c < COLS; c++) drawCellFg(r, c, grid[r][c]);
+  }
+
   function drawGrid(grid) {
-    // Two-pass render so double-height characters from row N don't get
-    // overpainted by row N+1's background fill. Pass 1: every cell's
-    // background. Pass 2: characters + underlines.
     for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const cell = grid[r][c];
-        ctx.fillStyle = COLOURS[cell.b] || '#000';
-        ctx.fillRect(c * CELL_W, r * CELL_H, CELL_W, CELL_H);
-      }
+      for (let c = 0; c < COLS; c++) drawCellBg(r, c, grid[r][c]);
     }
     for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const cell = grid[r][c];
-        const ch = cell.c;
-        const hasChar = ch && ch !== ' ';
-        if (hasChar) {
-          ctx.fillStyle = COLOURS[cell.f] || '#fff';
-          const size = cell.d ? CELL_H * 2 : CELL_H;
-          ctx.font = `${size}px "Bedstead", monospace`;
-          ctx.fillText(ch, c * CELL_W, r * CELL_H);
-        }
-        // Underline links, but only under visible characters - the
-        // trailing padding spaces were rendering as a long cyan bar.
-        if (cell.l && hasChar) {
-          ctx.fillStyle = COLOURS.C;
-          ctx.fillRect(c * CELL_W, r * CELL_H + CELL_H - 1, CELL_W, 1);
-        }
-      }
+      for (let c = 0; c < COLS; c++) drawCellFg(r, c, grid[r][c]);
     }
+  }
+
+  // Row-reveal: paint the page top-to-bottom over ~250ms, the way a real
+  // teletext page filled in as data arrived off the broadcast stream.
+  let revealToken = 0;
+  function revealGrid(grid) {
+    const token = ++revealToken;
+    let row = 0;
+    function step() {
+      if (token !== revealToken) return; // superseded by a newer page
+      const until = Math.min(ROWS, row + 3);
+      for (; row < until; row++) drawRow(grid, row);
+      if (row < ROWS) requestAnimationFrame(step);
+    }
+    step();
+  }
+
+  // Expand the run-length-encoded grid format from ?fmt=rle.
+  function decodeRle(gridRle) {
+    return gridRle.map((row) => {
+      const out = [];
+      for (const [count, cell] of row) {
+        for (let i = 0; i < count; i++) out.push(cell);
+      }
+      return out;
+    });
   }
 
   // Cols 16-39 of row 0 hold the authentic Ceefax date+clock segment:
@@ -214,18 +259,44 @@
     }
   }
 
-  async function navigate(pageNum, sub = 1, push = true) {
+  // While a page fetch is in flight the header rolls through page numbers -
+  // the authentic Ceefax "searching the carousel" behaviour.
+  let rollTimer = null;
+  function startHeaderRoll(fromPage) {
+    stopHeaderRoll();
+    let n = fromPage || 100;
+    rollTimer = setInterval(() => {
+      n = n >= 899 ? 100 : n + 1;
+      const text = `P${String(n).padStart(3, '0')}`;
+      for (let i = 0; i < 4; i++) {
+        drawCell(0, i, { c: text[i], f: 'W', b: 'K' });
+      }
+    }, 50);
+  }
+  function stopHeaderRoll() {
+    if (rollTimer) { clearInterval(rollTimer); rollTimer = null; }
+  }
+
+  async function navigate(pageNum, sub = 1, push = true, reveal = true) {
     // Show a loading state immediately so the user gets feedback - matters
     // most on Render free's ~30s cold start.
     setLoading(`PLEASE WAIT P${pageNum}`);
+    const changingPage = !current || current.page !== Number(pageNum);
+    if (changingPage) startHeaderRoll(current ? current.page : Number(pageNum));
     try {
-      const url = `/api/page/${pageNum}${sub > 1 ? `?sub=${sub}` : ''}`;
+      const url = `/api/page/${pageNum}?fmt=rle${sub > 1 ? `&sub=${sub}` : ''}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const payload = await res.json();
+      stopHeaderRoll();
+      if (payload.gridRle) {
+        payload.grid = decodeRle(payload.gridRle);
+        delete payload.gridRle;
+      }
       current = payload;
       currentSub = payload.subPage || sub;
-      drawGrid(payload.grid);
+      if (reveal && changingPage) revealGrid(payload.grid);
+      else drawGrid(payload.grid);
       paintHeaderRight();
       updateFastextButtons();
       updateSubpageRow();
@@ -240,6 +311,7 @@
       startSubCycle();
     } catch (err) {
       console.error('navigate failed', err);
+      stopHeaderRoll();
       clearLoading();
       setStatus('FETCH FAILED');
     }
@@ -315,9 +387,16 @@
     const y = (ev.clientY - rect.top) * (canvas.height / rect.height);
     const col = Math.floor(x / CELL_W);
     const row = Math.floor(y / CELL_H);
-    // Row 24 fastext is gone from the canvas - the remote handles it.
-    if (current && current.grid && current.grid[row] && current.grid[row][col] && current.grid[row][col].l) {
-      window.open(current.grid[row][col].l, '_blank', 'noopener');
+    const cell = current && current.grid && current.grid[row] && current.grid[row][col];
+    if (!cell) return;
+    // Internal page links (yellow underline) navigate in-canvas;
+    // external links (cyan underline) open in a new tab.
+    if (cell.p) {
+      navigate(Number(cell.p));
+      return;
+    }
+    if (cell.l) {
+      window.open(cell.l, '_blank', 'noopener');
     }
   }
 
@@ -394,6 +473,7 @@
       navRow.addEventListener('click', (ev) => {
         const btn = ev.target.closest('button');
         if (!btn) return;
+        if (btn.id === 'crt-btn') { toggleCrt(); return; }
         const target = Number(btn.dataset.nav);
         if (target) navigate(target);
       });
@@ -454,6 +534,18 @@
     });
   }
 
+  const CRT_KEY = 'teletext.crt';
+  function applyCrtPref() {
+    let on = true;
+    try { on = localStorage.getItem(CRT_KEY) !== '0'; } catch {}
+    document.body.classList.toggle('crt-off', !on);
+  }
+  function toggleCrt() {
+    const nowOff = !document.body.classList.contains('crt-off');
+    document.body.classList.toggle('crt-off', nowOff);
+    try { localStorage.setItem(CRT_KEY, nowOff ? '0' : '1'); } catch {}
+  }
+
   function showIosInstallHint() {
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
     const isStandalone = window.navigator.standalone ||
@@ -465,6 +557,7 @@
 
   (async function start() {
     registerServiceWorker();
+    applyCrtPref();
     showIosInstallHint();
     const banner = document.getElementById('update-banner');
     if (banner) banner.addEventListener('click', () => location.reload());

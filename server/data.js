@@ -17,7 +17,28 @@ function fromCacheOrStub(key) {
   return { ...stub, ...cached };
 }
 
+// A source is "stale" when its cache entry is much older than its refresh
+// cadence - i.e. the scraper has been failing. Thresholds are ~3x the cron
+// interval so a single missed run doesn't flag.
+const STALE_AFTER_MS = {
+  news:     45 * 60 * 1000,
+  bbcSport: 60 * 60 * 1000,
+  bbcLive:  10 * 60 * 1000,
+  weather:  90 * 60 * 1000,
+  tv:       6 * 60 * 60 * 1000,
+  football: 45 * 60 * 1000,
+  lottery:  26 * 60 * 60 * 1000,
+};
+
+function isStale(key) {
+  const entry = cache.get(key);
+  if (!entry) return true; // stub data is by definition stale
+  const threshold = STALE_AFTER_MS[key] || 60 * 60 * 1000;
+  return Date.now() - entry.fetchedAt > threshold;
+}
+
 module.exports = {
+  isStale,
   news: () => fromCacheOrStub('news'),
   football: () => fromCacheOrStub('football'),
   weather: () => fromCacheOrStub('weather'),

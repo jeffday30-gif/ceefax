@@ -78,8 +78,58 @@ function renderIndex(g) {
   return g.toJSON({ page: 400, subPage: 1, totalSubPages: 1, title: 'WEATHER' });
 }
 
-function renderNational(g) {
-  g.writeHeaderBand(401, 'UK WEATHER', { subPage: 1, totalSubPages: 1 });
+// Sub-page 1: the classic Ceefax UK weather map - blue mosaic silhouette
+// with live temperatures overlaid at city locations.
+function renderNationalMap(g) {
+  const { BITMAP, CITY_CELLS } = require('./ukMap');
+  const w = data.weather();
+  if (data.isStale('weather')) g.markStale();
+  g.writeHeaderBand(401, 'UK WEATHER', { subPage: 1, totalSubPages: 2 });
+  g.writeSectionTitle(2, 'UK WEATHER TODAY', SECTION);
+
+  const MAP_TOP = 4;
+  const MAP_LEFT = 1;
+  g.drawBitmap(MAP_TOP, MAP_LEFT, BITMAP, 'B', 'K');
+
+  // Overlay live temperatures in yellow at each city's map position.
+  const byName = new Map((w.cities || []).map((c) => [c.name, c]));
+  for (const [name, pos] of Object.entries(CITY_CELLS)) {
+    const city = byName.get(name);
+    if (!city || city.tempC == null) continue;
+    const label = String(city.tempC);
+    const url = bbcWeatherUrl(name);
+    g.writeRow(MAP_TOP + pos.row, label, 'Y', 'K', MAP_LEFT + pos.col,
+      url ? { l: url } : {});
+  }
+
+  // Legend down the right-hand side.
+  g.writeRow(5,  'TEMPS', 'Y', 'K', 30);
+  g.writeRow(6,  'IN C',  'Y', 'K', 30);
+  const outlookWords = String(w.outlook || '').split(/\s+/);
+  let row = 9;
+  let line = '';
+  for (const word of outlookWords) {
+    if ((line + ' ' + word).trim().length > 10) {
+      if (row > 19) break;
+      g.writeRow(row++, line.trim(), 'C', 'K', 29);
+      line = word;
+    } else {
+      line = (line + ' ' + word).trim();
+    }
+  }
+  if (line && row <= 19) g.writeRow(row, line, 'C', 'K', 29);
+
+  g.writeRow(22, 'CITY LIST ON PAGE 2 - PRESS >', 'W', 'K', 1);
+  g.writeRow(23, 'TAP A TEMPERATURE FOR BBC FORECAST', 'C', 'K', 1);
+  weatherFastext(g, 401);
+  g.writeFastextBar();
+  return g.toJSON({ page: 401, subPage: 1, totalSubPages: 2, title: 'UK WEATHER' });
+}
+
+// Sub-page 2: the city temperature table.
+function renderNationalList(g) {
+  if (data.isStale('weather')) g.markStale();
+  g.writeHeaderBand(401, 'UK WEATHER', { subPage: 2, totalSubPages: 2 });
   g.writeSectionTitle(2, 'UK WEATHER TODAY', SECTION);
   let row = g.writeWrapped(4, 7, data.weather().outlook, 'C', 'K', 0);
   row = Math.max(row + 1, 9);
@@ -101,7 +151,11 @@ function renderNational(g) {
   g.writeRow(23, 'TAP A CITY FOR BBC WEATHER FORECAST', 'C', 'K', 0);
   weatherFastext(g, 401);
   g.writeFastextBar();
-  return g.toJSON({ page: 401, subPage: 1, totalSubPages: 1, title: 'UK WEATHER' });
+  return g.toJSON({ page: 401, subPage: 2, totalSubPages: 2, title: 'UK WEATHER' });
+}
+
+function renderNational(g, subPage = 1) {
+  return subPage >= 2 ? renderNationalList(g) : renderNationalMap(g);
 }
 
 function renderFiveDay(g) {
@@ -170,11 +224,11 @@ function ensureEngland() {
   }
 }
 
-function render(pageNum, _opts = {}) {
+function render(pageNum, { subPage = 1 } = {}) {
   ensureEngland();
   const g = new Grid();
   if (pageNum === 400) return renderIndex(g);
-  if (pageNum === 401) return renderNational(g);
+  if (pageNum === 401) return renderNational(g, subPage);
   if (pageNum === 402) return renderFiveDay(g);
   if (REGIONAL_PAGES[pageNum]) return renderRegional(g, pageNum);
   if (pageNum === 410) return renderWorld(g);

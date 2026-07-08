@@ -1,4 +1,5 @@
 const { Grid } = require('./grid');
+const data = require('../data');
 
 const HOMEPAGE_SECTIONS = [
   { label: 'News headlines',   page: 101, colour: 'Y' },
@@ -10,13 +11,11 @@ const HOMEPAGE_SECTIONS = [
   { label: 'WORLD CUP 2026',   page: 305, colour: 'G' },
   { label: 'Sport',            page: 300, colour: 'G' },
   { label: 'Football',         page: 302, colour: 'G' },
-  { label: 'Cricket',          page: 340, colour: 'G' },
   { label: 'Weather',          page: 400, colour: 'C' },
   { label: 'Entertainment',    page: 500, colour: 'M' },
   { label: 'TV listings',      page: 600, colour: 'M' },
   { label: 'Lottery results',  page: 555, colour: 'R' },
   { label: 'A-Z index',        page: 199, colour: 'W' },
-  { label: 'Pages from Ceefax',page: 152, colour: 'W' },
 ];
 
 const AZ_ENTRIES = [
@@ -81,12 +80,38 @@ const AZ_ENTRIES = [
   ['World news',       170],
 ];
 
+// Live-event banner: when World Cup matches are in play (or on today's
+// slate), P100 flags it - the way Ceefax front pages trailed big events.
+function liveBanner(g, row) {
+  const bbc = data.bbcLive();
+  const wc = bbc && bbc.worldCup;
+  if (!wc) return false;
+  const live = (wc.live || []).length;
+  const today = (wc.upcoming || []).length;
+  if (live > 0) {
+    const first = wc.live[0];
+    const score = first.homeScore != null ? `${first.homeScore}-${first.awayScore}` : 'LIVE';
+    const text = live === 1
+      ? ` WC LIVE: ${first.home} ${score} ${first.away} `.slice(0, 40)
+      : ` WORLD CUP: ${live} MATCHES LIVE NOW - 318 `.slice(0, 40);
+    g.writeRow(row, text.padEnd(40, ' ').slice(0, 40), 'K', 'Y', 0, { p: 318 });
+    return true;
+  }
+  if (today > 0) {
+    const text = ` WORLD CUP: ${today} MATCH${today > 1 ? 'ES' : ''} TODAY - PAGE 305 `;
+    g.writeRow(row, text.padEnd(40, ' ').slice(0, 40), 'K', 'C', 0, { p: 305 });
+    return true;
+  }
+  return false;
+}
+
 function renderHome(g, pageNum, subPage) {
   g.writeHeaderBand(pageNum, 'TELETEXT', { subPage, totalSubPages: 1 });
   g.writeMasthead(2, 'TELETEXT', 'R');
   g.writeCentered(5, 'TELETEXT REBORN', 'C', 'K');
 
-  let row = 7;
+  const hasBanner = liveBanner(g, 6);
+  let row = hasBanner ? 8 : 7;
   for (const { label, page, colour } of HOMEPAGE_SECTIONS) {
     if (row > 21) break;
     g.writeRow(row, label, colour, 'K', 3);

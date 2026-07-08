@@ -167,6 +167,30 @@ the service Live.
 
 ## Recent changes log (most recent first - append on each session)
 
+- 2026-07-08: Production batch - mosaics, article reader, payload, CRT.
+  (a) SAA5050 block mosaics: cells carry `m` = 6-bit sextant mask, client
+  draws 2x3 sub-blocks with fillRect (pixel-perfect, no font dependency).
+  `Grid.setMosaic/drawBitmap/writeBigText` (3x5 block-digit font).
+  (b) UK weather map on P401 sub 1 (`renderers/ukMap.js` - hand-built
+  52x51 silhouette from lat/lon spans) with live temps overlaid at city
+  positions; city table moved to sub 2. (c) Lottery P555 numbers as big
+  block digits, main balls white / bonus cyan, jackpot on title row.
+  (d) In-teletext article reader: news scraper fetches BBC article
+  bodies (p.class*="Paragraph" inside <article>), stories readable on
+  P111-118 with sub-pages; P101 is now the authentic headline list with
+  internal page links (cell attr `p`, yellow underline; client navigates
+  in-canvas instead of opening a tab). (e) Payload: gzip via compression
+  middleware + opt-in `?fmt=rle` run-length grid encoding - P303 went
+  26,337 B -> 607 B on the wire. Old cached clients keep the fat format.
+  (f) Row-reveal painting (page draws top-to-bottom ~250ms), rolling
+  header page-search animation during fetch, CRT scanline overlay with
+  CRT toggle button in nav row (localStorage teletext.crt). (g) Stale
+  data: `data.isStale(key)` + yellow dot on section title bar when a
+  source exceeds ~3x its refresh interval (news/weather/scores/tv).
+  (h) /healthz now includes per-scraper lastRun/ok/error (lottery throws
+  on total failure so the reason is visible in prod). (i) P100 World Cup
+  banner when matches are live/today (links P318/P305). SW v12 -> v13.
+
 - 2026-06-14: Five UX additions + About-page tidy. (a) Sub-page nav
   strip (`< 1/3 >`) below the digit keypad, hidden when total=1,
   shown otherwise. Tapping a button engages HOLD automatically so the

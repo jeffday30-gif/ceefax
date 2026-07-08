@@ -1,5 +1,6 @@
 const path = require('path');
 const express = require('express');
+const compression = require('compression');
 
 const healthRouter = require('./routes/health');
 const pagesRouter = require('./routes/pages');
@@ -7,6 +8,9 @@ const scrapers = require('./scrapers');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 10000;
+
+// Grid JSON is extremely repetitive - gzip cuts a page payload ~95%.
+app.use(compression());
 
 app.use('/healthz', healthRouter);
 app.use('/api/page', pagesRouter);

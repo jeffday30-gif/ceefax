@@ -55,25 +55,31 @@ function renderLottery(g) {
   g.writeHeaderBand(555, 'LOTTERY', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'NATIONAL LOTTERY', 'R');
   let row = 4;
-  function writeGame(name, draw, balls, bonusLabel, bonus, jackpot) {
-    g.writeRow(row++, `${name}  ${draw || ''}`, 'Y', 'K', 2);
-    g.writeRow(row++, fmtNumbers(balls) + `  ${bonusLabel} ${bonus}`, 'W', 'K', 4);
-    if (jackpot) g.writeRow(row++, `Next jackpot: ${jackpot}`, 'C', 'K', 4);
+
+  const two = (n) => String(n).padStart(2, '0');
+
+  // Each game: a title row, then the numbers as big block-mosaic digits
+  // (2 cell-rows tall). Main balls white, bonus balls cyan - the classic
+  // Ceefax colour distinction.
+  function writeGame(name, draw, balls, bonus, jackpot) {
+    if (row > 20) return;
+    g.writeRow(row, name, 'Y', 'K', 1);
+    const dateStr = (draw || '').replace(/^\w+day /, '');
+    if (dateStr) g.writeRow(row, dateStr, 'W', 'K', 14);
+    if (jackpot) g.writeRow(row, jackpot.slice(0, 12), 'C', 'K', 40 - Math.min(12, jackpot.length));
     row++;
+    const main = (balls || []).map(two).join(' ');
+    const bonusStr = Array.isArray(bonus) ? bonus.map(two).join(' ') : (bonus != null ? two(bonus) : '');
+    const nextCol = g.writeBigText(row, 0, main, 'W', 'K');
+    if (bonusStr) g.writeBigText(row, Math.min(nextCol + 1, 40 - bonusStr.length * 2), bonusStr, 'C', 'K');
+    row += 3;
   }
-  if (lot.lotto) {
-    writeGame('LOTTO', lot.lotto.drawDate, lot.lotto.numbers, 'Bonus', lot.lotto.bonus, lot.lotto.jackpot);
-  }
-  if (lot.thunderball) {
-    writeGame('THUNDERBALL', lot.thunderball.drawDate, lot.thunderball.numbers, 'TB', lot.thunderball.thunderball, lot.thunderball.jackpot);
-  }
-  if (lot.euromillions) {
-    const stars = Array.isArray(lot.euromillions.luckyStars) ? lot.euromillions.luckyStars.join(' ') : '';
-    writeGame('EUROMILLIONS', lot.euromillions.drawDate, lot.euromillions.numbers, 'Stars', stars, lot.euromillions.jackpot);
-  }
-  if (lot.setForLife) {
-    writeGame('SET FOR LIFE', lot.setForLife.drawDate, lot.setForLife.numbers, 'LB', lot.setForLife.lifeBall, lot.setForLife.jackpot);
-  }
+
+  if (lot.lotto)        writeGame('LOTTO',        lot.lotto.drawDate,        lot.lotto.numbers,        lot.lotto.bonus,            lot.lotto.jackpot);
+  if (lot.thunderball)  writeGame('THUNDERBALL',  lot.thunderball.drawDate,  lot.thunderball.numbers,  lot.thunderball.thunderball, lot.thunderball.jackpot);
+  if (lot.euromillions) writeGame('EUROMILLIONS', lot.euromillions.drawDate, lot.euromillions.numbers, lot.euromillions.luckyStars, lot.euromillions.jackpot);
+  if (lot.setForLife)   writeGame('SET FOR LIFE', lot.setForLife.drawDate,   lot.setForLife.numbers,   lot.setForLife.lifeBall,     lot.setForLife.jackpot);
+  g.writeRow(23, 'MAIN BALLS WHITE - BONUS BALLS CYAN', 'C', 'K', 1);
   entFastext(g, 555);
   g.writeFastextBar();
   return g.toJSON({ page: 555, subPage: 1, totalSubPages: 1, title: 'LOTTERY' });

@@ -63,6 +63,7 @@ function renderIndex(g) {
 function renderChannel(g, pageNum) {
   const channelName = CHANNEL_PAGES[pageNum];
   const schedule = data.tv().channels[channelName] || [];
+  if (data.isStale('tv')) g.markStale();
   const perPage = 18;
   const total = Math.max(1, Math.ceil(schedule.length / perPage));
   const sub = 1;

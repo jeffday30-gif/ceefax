@@ -64,6 +64,7 @@ function render(pageNum, _opts = {}) {
   const g = new Grid();
   const { live, upcoming, finished } = gatherEvents();
 
+  if (data.isStale('bbcLive')) g.markStale();
   g.writeHeaderBand(318, 'LIVE SCORES', { subPage: 1, totalSubPages: 1 });
   g.writeSectionTitle(2, 'LIVE FOOTBALL SCORES', SECTION);
 
