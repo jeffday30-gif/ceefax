@@ -190,6 +190,12 @@ the service Live.
   (h) /healthz now includes per-scraper lastRun/ok/error (lottery throws
   on total failure so the reason is visible in prod). (i) P100 World Cup
   banner when matches are live/today (links P318/P305). SW v12 -> v13.
+  (j) Lottery source switched to the OFFICIAL national-lottery.co.uk
+  draw-history endpoint (/results/{game}/draw-history/csv - actually
+  returns XML): lottery.co.uk blackholes Render's datacenter IP (the
+  healthz diagnostics proved it - 12s connect timeout). lottery.co.uk
+  AMP kept as fallback. Lotto has TWO ball sets per draw night (rounds
+  1+2); we take the first <balls> block.
 
 - 2026-06-14: Five UX additions + About-page tidy. (a) Sub-page nav
   strip (`< 1/3 >`) below the digit keypad, hidden when total=1,
