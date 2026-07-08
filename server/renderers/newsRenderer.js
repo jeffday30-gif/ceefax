@@ -6,7 +6,7 @@ const SECTION = 'R';
 
 const NEWS_INDEX_ENTRIES = [
   ['News headlines',  101, 'Y'],
-  ['News stories',    103, 'Y'],
+  ['News stories',    111, 'Y'],
   ['News in brief',   150, 'Y'],
   ['UK news',         160, 'C'],
   ['World news',      170, 'C'],

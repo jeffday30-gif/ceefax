@@ -1,8 +1,12 @@
-// UK National Lottery results scraper. Uses lottery.co.uk because it is
-// fully server-rendered (national-lottery.co.uk is a React SPA and returns
-// an empty shell to a curl-style fetch). Updated hourly - draw days are
-// Wed/Sat (Lotto), Tue/Fri (EuroMillions), Tue/Wed/Fri/Sat (Thunderball),
-// Mon/Thu (Set For Life).
+// UK National Lottery results scraper.
+//
+// Primary source: the official national-lottery.co.uk draw-history download
+// endpoint, which returns structured XML (despite the /csv path) - draw
+// date, balls, bonus balls and next estimated jackpot. No JS rendering.
+//
+// Fallback: lottery.co.uk's AMP results pages (server-rendered HTML).
+// lottery.co.uk times out from datacenter IPs (Render), which is why the
+// official endpoint is primary.
 
 const axios = require('axios');
 const cache = require('../cache');
@@ -10,23 +14,58 @@ const cache = require('../cache');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) ' +
            'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
 
-async function fetchHtml(url) {
-  const { data } = await axios.get(url, {
-    timeout: 12000,
-    headers: {
-      'User-Agent': UA,
-      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-      'Accept-Language': 'en-GB,en;q=0.9',
-      Referer: 'https://www.lottery.co.uk/',
-    },
-  });
-  return data;
+const HEADERS = {
+  'User-Agent': UA,
+  Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  'Accept-Language': 'en-GB,en;q=0.9',
+};
+
+const lastErrors = [];
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function friendlyDate(iso) {
+  const d = new Date(iso + 'T12:00:00Z');
+  if (Number.isNaN(d.getTime())) return iso;
+  return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 }
 
-// lottery.co.uk AMP results wraps each ball as
-//   <div class="result medium {game}-ball-..."]>NN</div>
-// followed by a single bonus div with class containing "bonus-ball".
-// We grab the first block (the latest draw), main balls + bonus.
+function friendlyJackpot(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (/every month/i.test(s)) return '£10K/MONTH';
+  return s.startsWith('£') ? s : `£${s}`;
+}
+
+// --- Primary: official XML ------------------------------------------------
+
+async function fetchOfficial(game, bonusCount) {
+  const url = `https://www.national-lottery.co.uk/results/${game}/draw-history/csv`;
+  const { data } = await axios.get(url, { timeout: 12000, headers: HEADERS });
+  const xml = String(data);
+
+  const dateM = xml.match(/<draw-date>([\d-]+)<\/draw-date>/);
+  // Lotto publishes two ball sets per draw night (round 1 and round 2);
+  // the first <balls> block is the main draw.
+  const ballsBlockM = xml.match(/<balls>([\s\S]*?)<\/balls>/);
+  if (!ballsBlockM) throw new Error(`${game}: no balls in XML`);
+  const block = ballsBlockM[1];
+  const numbers = [...block.matchAll(/<ball number="\d+">(\d+)<\/ball>/g)].map((m) => Number(m[1]));
+  const bonuses = [...block.matchAll(/<bonus-ball[^>]*>(\d+)<\/bonus-ball>/g)].map((m) => Number(m[1]));
+  if (!numbers.length) throw new Error(`${game}: no main balls parsed`);
+  const jackpotM = xml.match(/<next-estimated-jackpot>([^<]+)<\/next-estimated-jackpot>/);
+
+  return {
+    drawDate: dateM ? friendlyDate(dateM[1]) : null,
+    numbers,
+    bonus: bonusCount === 1 ? bonuses[0] : bonuses.slice(0, bonusCount),
+    jackpot: friendlyJackpot(jackpotM && jackpotM[1]),
+  };
+}
+
+// --- Fallback: lottery.co.uk AMP pages -------------------------------------
+
 function extractFirstBlock(html, count) {
   const re = /<div[^>]*class="[^"]*\bresult\b[^"]*"[^>]*>\s*(\d{1,2})\s*<\/div>/gi;
   const nums = [];
@@ -39,44 +78,42 @@ function extractFirstBlock(html, count) {
 }
 
 function extractDate(html) {
-  // The AMP page formats it as "Saturday<span>13th June 2026</span>".
   const m = html.match(/(Saturday|Sunday|Monday|Tuesday|Wednesday|Thursday|Friday)[^<]*<[^>]*>\s*(\d{1,2})(?:st|nd|rd|th)?\s+(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})/i);
   if (!m) return null;
-  return `${m[1]} ${m[2]} ${m[3]} ${m[4]}`;
+  return `${m[1].slice(0, 3)} ${m[2]} ${m[3].slice(0, 3)}`;
 }
 
-// Extract the "Next Estimated Jackpot" amount from the AMP page. lottery.co.uk
-// renders it as `<span class="resultJackpot">&pound;3,681,650</span>` or
-// similar. Falls back to a free-form £xx Million pattern for some games.
 function extractJackpot(html) {
   const m1 = html.match(/class="resultJackpot"[^>]*>\s*(?:&pound;|£)?\s*([\d,]+(?:\.\d+)?\s*(?:Million|Thousand)?)/i);
   if (m1) return '£' + m1[1].replace(/\s+/g, ' ').trim();
-  const m2 = html.match(/(?:&pound;|£)\s*([\d,]+(?:\.\d+)?\s*Million)/i);
-  if (m2) return '£' + m2[1].trim();
   return null;
 }
 
-// Remember why each game failed so the registry can surface it in /healthz.
-const lastErrors = [];
+async function fetchFallback(slug, ballCount, bonusCount) {
+  const url = `https://www.lottery.co.uk/amp/${slug}/results`;
+  const { data } = await axios.get(url, { timeout: 12000, headers: HEADERS });
+  const balls = extractFirstBlock(data, ballCount + bonusCount);
+  if (!balls) throw new Error(`${slug}: fallback parse failed`);
+  return {
+    drawDate: extractDate(data),
+    numbers: balls.slice(0, ballCount),
+    bonus: bonusCount === 1 ? balls[ballCount] : balls.slice(ballCount, ballCount + bonusCount),
+    jackpot: extractJackpot(data),
+  };
+}
 
-async function scrapeGame(label, url, ballCount, bonusCount) {
+// --- Orchestration ----------------------------------------------------------
+
+async function scrapeGame(official, fallbackSlug, ballCount, bonusCount) {
   try {
-    const html = await fetchHtml(url);
-    const balls = extractFirstBlock(html, ballCount + bonusCount);
-    if (!balls) {
-      console.warn(`lottery: ${label} parse failed (no balls found)`);
-      lastErrors.push(`${label}: parse failed (page shape changed or bot-blocked)`);
-      return null;
-    }
-    return {
-      drawDate: extractDate(html),
-      numbers:  balls.slice(0, ballCount),
-      bonus:    bonusCount === 1 ? balls[ballCount] : balls.slice(ballCount, ballCount + bonusCount),
-      jackpot:  extractJackpot(html),
-    };
+    return await fetchOfficial(official, bonusCount);
   } catch (err) {
-    console.warn(`lottery: ${label} fetch failed:`, err.message);
-    lastErrors.push(`${label}: ${err.message}`);
+    lastErrors.push(`${official} (official): ${err.message}`);
+  }
+  try {
+    return await fetchFallback(fallbackSlug, ballCount, bonusCount);
+  } catch (err) {
+    lastErrors.push(`${fallbackSlug} (fallback): ${err.message}`);
     return null;
   }
 }
@@ -84,15 +121,14 @@ async function scrapeGame(label, url, ballCount, bonusCount) {
 async function run() {
   lastErrors.length = 0;
   const [lotto, thunderball, euromillions, setForLife] = await Promise.all([
-    scrapeGame('lotto',        'https://www.lottery.co.uk/amp/lotto/results',        6, 1),
-    scrapeGame('thunderball',  'https://www.lottery.co.uk/amp/thunderball/results',  5, 1),
-    scrapeGame('euromillions', 'https://www.lottery.co.uk/amp/euromillions/results', 5, 2),
-    scrapeGame('set-for-life', 'https://www.lottery.co.uk/amp/set-for-life/results', 5, 1),
+    scrapeGame('lotto',        'lotto',        6, 1),
+    scrapeGame('thunderball',  'thunderball',  5, 1),
+    scrapeGame('euromillions', 'euromillions', 5, 2),
+    scrapeGame('set-for-life', 'set-for-life', 5, 1),
   ]);
 
   const got = [lotto, thunderball, euromillions, setForLife].filter(Boolean).length;
   if (got === 0) {
-    // Throw so the scraper registry records the reason and /healthz shows it.
     throw new Error(`all four games failed: ${lastErrors[0] || 'unknown'}`);
   }
 
@@ -103,7 +139,7 @@ async function run() {
     euromillions: euromillions && { drawDate: euromillions.drawDate, numbers: euromillions.numbers, luckyStars: euromillions.bonus,    jackpot: euromillions.jackpot },
     setForLife:   setForLife   && { drawDate: setForLife.drawDate,   numbers: setForLife.numbers,   lifeBall: setForLife.bonus,        jackpot: setForLife.jackpot },
   });
-  console.log(`lottery: cached ${got}/4 games`);
+  console.log(`lottery: cached ${got}/4 games (${lastErrors.length ? 'errors: ' + lastErrors.join('; ') : 'all primary'})`);
 }
 
 module.exports = {
